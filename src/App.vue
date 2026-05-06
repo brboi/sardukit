@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { getAuthToken, apiFetch } from './services/api.js'
 import CsvImport from './components/CsvImport.vue'
 import RulesManager from './components/RulesManager.vue'
+import ReportGenerator from './components/ReportGenerator.vue'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -92,8 +93,7 @@ window.handleCredentialResponse = handleCredentialResponse
         <RulesManager />
       </div>
       <div v-if="view === 'report'">
-        <h1>Report Generator</h1>
-        <p>Report generation coming soon.</p>
+        <ReportGenerator />
       </div>
     </template>
 

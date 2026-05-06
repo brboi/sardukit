@@ -1,6 +1,12 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/api/health", "destination": "/api/health.js" },
+    { "source": "/api/auth/verify", "destination": "/api/auth.js" },
+    { "source": "/api/transactions", "destination": "/api/transactions.js" },
+    { "source": "/api/settings", "destination": "/api/settings.js" },
+    { "source": "/api/gemini", "destination": "/api/gemini.js" },
+    { "source": "/api/reports", "destination": "/api/reports.js" },
+    { "source": "/api/reports/generate", "destination": "/api/reports/generate.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
