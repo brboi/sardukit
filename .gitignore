@@ -27,3 +27,11 @@ dist-ssr
 docs/
 .vercel
 .env*.local
+
+# Agent skills
+.agents/
+skills-lock.json
+
+# Agent skills
+.agents/
+skills-lock.json
