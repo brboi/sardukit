@@ -116,23 +116,3 @@ window.handleCredentialResponse = handleCredentialResponse
     </template>
   </main>
 </template>
-
-    <template v-else>
-      <h1>Sardukit</h1>
-      <p v-if="error" style="color: #c0392b">{{ error }}</p>
-      <div id="g_id_onload"
-        :data-client_id="GOOGLE_CLIENT_ID"
-        data-callback="handleCredentialResponse"
-        data-auto_prompt="false"
-        style="display: none"
-      ></div>
-      <div class="g_id_signin"
-        data-type="standard"
-        data-size="large"
-        data-theme="outline"
-        data-shape="rectangular"
-        data-logo_alignment="left"
-      ></div>
-    </template>
-  </main>
-</template>

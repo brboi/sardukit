@@ -117,9 +117,6 @@ const newRule = ref({
 const geminiDescriptions = ref('')
 const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
-const geminiDescriptions = ref('')
-const geminiLoading = ref(false)
-const geminiSuggestion = ref(null)
 
 onMounted(async () => {
   await loadRules()
@@ -188,47 +185,6 @@ async function saveRules() {
   } finally {
     saving.value = false
   }
-}
-
-async function suggestRule() {
-  const descriptions = geminiDescriptions.value.split('\n').filter(l => l.trim())
-  if (descriptions.length === 0) return
-
-  geminiLoading.value = true
-  geminiSuggestion.value = null
-  try {
-    const categories = [...new Set(rules.value.map(r => r.category).filter(Boolean))]
-    const res = await apiFetch('/api/gemini', {
-      method: 'POST',
-      body: JSON.stringify({ descriptions, categories }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
-    } else {
-      geminiSuggestion.value = await res.json()
-    }
-  } catch (e) {
-    alert('Network error: ' + e.message)
-  } finally {
-    geminiLoading.value = false
-  }
-}
-
-function addGeminiRule() {
-  if (!geminiSuggestion.value?.pattern || !geminiSuggestion.value?.category) return
-  const maxPriority = rules.value.reduce((max, r) => Math.max(max, r.priority ?? 0), 0)
-  rules.value.push({
-    id: Date.now().toString(),
-    pattern: geminiSuggestion.value.pattern,
-    match_type: geminiSuggestion.value.match_type || 'contains',
-    category: geminiSuggestion.value.category,
-    sub_category: geminiSuggestion.value.sub_category || null,
-    priority: maxPriority + 1,
-    tags: geminiSuggestion.value.tags || [],
-  })
-  geminiSuggestion.value = null
-  geminiDescriptions.value = ''
 }
 
 async function suggestRule() {
