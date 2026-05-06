@@ -1,11 +1,27 @@
 CREATE TABLE IF NOT EXISTS transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bank_source TEXT,
-    external_id TEXT UNIQUE,
-    date DATE,
+    bank_source TEXT NOT NULL,
+    sequence_number TEXT,
+    extract_number TEXT,
+    account_number TEXT,
+    execution_date DATE,
+    accounting_date DATE,
+    value_date DATE,
     amount DECIMAL,
-    description TEXT,
-    raw_data JSONB
+    currency TEXT DEFAULT 'EUR',
+    transaction_type TEXT,
+    counterparty_account TEXT,
+    counterparty_name TEXT,
+    counterparty_street TEXT,
+    counterparty_city TEXT,
+    communication TEXT,
+    details TEXT,
+    status TEXT,
+    rejection_reason TEXT,
+    bic TEXT,
+    country_code TEXT,
+    raw_data JSONB,
+    UNIQUE (bank_source, sequence_number)
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -16,8 +32,7 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT,
-    start_date DATE,
-    end_date DATE,
+    year INTEGER NOT NULL,
     initial_balance DECIMAL,
     final_balance DECIMAL,
     created_at TIMESTAMP DEFAULT NOW()
