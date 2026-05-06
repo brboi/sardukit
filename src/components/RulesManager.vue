@@ -60,6 +60,42 @@
       <button @click="saveRules" :disabled="saving" style="margin-top: 1rem">
         {{ saving ? 'Saving...' : 'Save All Rules' }}
       </button>
+
+      <details style="margin-top: 2rem">
+        <summary><strong>Suggest Rule with Gemini AI</strong></summary>
+        <div class="grid" style="margin-top: 1rem">
+          <h4>Paste Transaction Descriptions</h4>
+          <textarea
+            v-model="geminiDescriptions"
+            placeholder="One description per line"
+            rows="5"
+          ></textarea>
+          <button @click="suggestRule" :disabled="geminiLoading">
+            {{ geminiLoading ? 'Analyzing...' : 'Suggest a Rule' }}
+          </button>
+        </div>
+
+        <div v-if="geminiSuggestion" style="margin-top: 1rem; border: 1px solid var(--border); padding: 1rem">
+          <h4>Proposed Rule</h4>
+          <p v-if="geminiSuggestion.explanation" style="font-style: italic; color: var(--text)">
+            {{ geminiSuggestion.explanation }}
+          </p>
+          <label>Pattern <input type="text" v-model="geminiSuggestion.pattern" /></label>
+          <label>Match Type
+            <select v-model="geminiSuggestion.match_type">
+              <option value="contains">Contains</option>
+              <option value="starts_with">Starts With</option>
+              <option value="ends_with">Ends With</option>
+              <option value="regex">Regex</option>
+              <option value="exact">Exact</option>
+            </select>
+          </label>
+          <label>Category <input type="text" v-model="geminiSuggestion.category" /></label>
+          <label>Sub-Category <input type="text" v-model="geminiSuggestion.sub_category" /></label>
+          <button @click="addGeminiRule">Add This Rule</button>
+          <button @click="geminiSuggestion = null">Dismiss</button>
+        </div>
+      </details>
     </template>
   </div>
 </template>
@@ -78,6 +114,12 @@ const newRule = ref({
   category: '',
   sub_category: '',
 })
+const geminiDescriptions = ref('')
+const geminiLoading = ref(false)
+const geminiSuggestion = ref(null)
+const geminiDescriptions = ref('')
+const geminiLoading = ref(false)
+const geminiSuggestion = ref(null)
 
 onMounted(async () => {
   await loadRules()
@@ -146,5 +188,87 @@ async function saveRules() {
   } finally {
     saving.value = false
   }
+}
+
+async function suggestRule() {
+  const descriptions = geminiDescriptions.value.split('\n').filter(l => l.trim())
+  if (descriptions.length === 0) return
+
+  geminiLoading.value = true
+  geminiSuggestion.value = null
+  try {
+    const categories = [...new Set(rules.value.map(r => r.category).filter(Boolean))]
+    const res = await apiFetch('/api/gemini', {
+      method: 'POST',
+      body: JSON.stringify({ descriptions, categories }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert('Error: ' + (err.error || 'Unknown error'))
+    } else {
+      geminiSuggestion.value = await res.json()
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message)
+  } finally {
+    geminiLoading.value = false
+  }
+}
+
+function addGeminiRule() {
+  if (!geminiSuggestion.value?.pattern || !geminiSuggestion.value?.category) return
+  const maxPriority = rules.value.reduce((max, r) => Math.max(max, r.priority ?? 0), 0)
+  rules.value.push({
+    id: Date.now().toString(),
+    pattern: geminiSuggestion.value.pattern,
+    match_type: geminiSuggestion.value.match_type || 'contains',
+    category: geminiSuggestion.value.category,
+    sub_category: geminiSuggestion.value.sub_category || null,
+    priority: maxPriority + 1,
+    tags: geminiSuggestion.value.tags || [],
+  })
+  geminiSuggestion.value = null
+  geminiDescriptions.value = ''
+}
+
+async function suggestRule() {
+  const descriptions = geminiDescriptions.value.split('\n').filter(l => l.trim())
+  if (descriptions.length === 0) return
+
+  geminiLoading.value = true
+  geminiSuggestion.value = null
+  try {
+    const categories = [...new Set(rules.value.map(r => r.category).filter(Boolean))]
+    const res = await apiFetch('/api/gemini', {
+      method: 'POST',
+      body: JSON.stringify({ descriptions, categories }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert('Error: ' + (err.error || 'Unknown error'))
+    } else {
+      geminiSuggestion.value = await res.json()
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message)
+  } finally {
+    geminiLoading.value = false
+  }
+}
+
+function addGeminiRule() {
+  if (!geminiSuggestion.value?.pattern || !geminiSuggestion.value?.category) return
+  const maxPriority = rules.value.reduce((max, r) => Math.max(max, r.priority ?? 0), 0)
+  rules.value.push({
+    id: Date.now().toString(),
+    pattern: geminiSuggestion.value.pattern,
+    match_type: geminiSuggestion.value.match_type || 'contains',
+    category: geminiSuggestion.value.category,
+    sub_category: geminiSuggestion.value.sub_category || null,
+    priority: maxPriority + 1,
+    tags: geminiSuggestion.value.tags || [],
+  })
+  geminiSuggestion.value = null
+  geminiDescriptions.value = ''
 }
 </script>
