@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getAuthToken, apiFetch } from './services/api.js'
+import CsvImport from './components/CsvImport.vue'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -84,8 +85,7 @@ window.handleCredentialResponse = handleCredentialResponse
         <p>Logged in as <strong>{{ email }}</strong></p>
       </div>
       <div v-if="view === 'import'">
-        <h1>Import CSV</h1>
-        <p>CSV import functionality coming soon.</p>
+        <CsvImport />
       </div>
       <div v-if="view === 'rules'">
         <h1>Rules Manager</h1>
