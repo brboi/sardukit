@@ -37,4 +37,45 @@ describe('applyRules', () => {
     const badRules = [{ id: '1', pattern: '[invalid', match_type: 'regex', category: 'Test', priority: 1 }];
     expect(applyRules({ description: 'test' }, badRules)).toBeNull();
   });
+
+  it('matches starts_with rule', () => {
+    const testRules = [{ id: '1', pattern: 'amazon', match_type: 'starts_with', category: 'Shopping', priority: 1 }];
+    const result = applyRules({ description: 'amazon prime renewal' }, testRules);
+    expect(result.category).toBe('Shopping');
+  });
+
+  it('does not match starts_with when pattern is not at start', () => {
+    const testRules = [{ id: '1', pattern: 'amazon', match_type: 'starts_with', category: 'Shopping', priority: 1 }];
+    const result = applyRules({ description: 'buy from amazon' }, testRules);
+    expect(result).toBeNull();
+  });
+
+  it('matches ends_with rule', () => {
+    const testRules = [{ id: '1', pattern: 'fee', match_type: 'ends_with', category: 'Fees', priority: 1 }];
+    const result = applyRules({ description: 'monthly fee' }, testRules);
+    expect(result.category).toBe('Fees');
+  });
+
+  it('matches exact rule', () => {
+    const testRules = [{ id: '1', pattern: 'paypal', match_type: 'exact', category: 'Payments', priority: 1 }];
+    const result = applyRules({ description: 'paypal' }, testRules);
+    expect(result.category).toBe('Payments');
+  });
+
+  it('returns null when no rule matches', () => {
+    const testRules = [{ id: '1', pattern: 'amazon', match_type: 'contains', category: 'Shopping', priority: 1 }];
+    const result = applyRules({ description: 'completely unrelated' }, testRules);
+    expect(result).toBeNull();
+  });
+
+  it('handles transaction with neither description nor details', () => {
+    const result = applyRules({}, rules);
+    expect(result).toBeNull();
+  });
+
+  it('handles rules with missing optional fields', () => {
+    const minimalRules = [{ id: '1', pattern: 'test', category: 'Test' }];
+    const result = applyRules({ description: 'test' }, minimalRules);
+    expect(result).toEqual({ category: 'Test', sub_category: null, tags: [], rule_id: '1' });
+  });
 });
