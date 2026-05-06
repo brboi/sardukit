@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { getAuthToken, apiFetch } from './services/api.js'
 import CsvImport from './components/CsvImport.vue'
+import RulesManager from './components/RulesManager.vue'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -88,8 +89,7 @@ window.handleCredentialResponse = handleCredentialResponse
         <CsvImport />
       </div>
       <div v-if="view === 'rules'">
-        <h1>Rules Manager</h1>
-        <p>Rules management coming soon.</p>
+        <RulesManager />
       </div>
       <div v-if="view === 'report'">
         <h1>Report Generator</h1>
