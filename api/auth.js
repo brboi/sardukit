@@ -1,10 +1,13 @@
 import { OAuth2Client } from 'google-auth-library';
-import { neon } from '@neondatabase/serverless';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from './utils/config.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const JWT_EXPIRY = '24h';
+
+import { getDb } from './utils/db.js';
+
+import { getDb } from './utils/db.js';
 
 async function getWhitelist() {
   const envEmails = process.env.ALLOWED_EMAILS;
@@ -13,7 +16,7 @@ async function getWhitelist() {
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = getDb();
     const rows = await sql`
       SELECT value FROM settings WHERE key = 'google_oauth_email_whitelist' LIMIT 1
     `;
