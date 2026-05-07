@@ -139,6 +139,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
+import { showError, showSuccess } from '../composables/useModal.js'
+import { showError, showSuccess } from '../composables/useModal.js'
 
 const RULES_KEY = 'categorization_rules'
 const rules = ref([])
@@ -236,12 +238,12 @@ async function saveRules() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      alert('Règles sauvegardées')
+      showSuccess('Règles sauvegardées')
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     saving.value = false
   }
@@ -261,12 +263,12 @@ async function suggestRule() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       geminiSuggestion.value = await res.json()
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     geminiLoading.value = false
   }
@@ -311,12 +313,12 @@ async function saveTemplate() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      alert('Template sauvegardé')
+      showSuccess('Template sauvegardé')
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     templateSaving.value = false
   }
@@ -349,12 +351,12 @@ async function saveColumnMappingTemplate() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      alert('Template sauvegardé')
+      showSuccess('Template sauvegardé')
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     columnMappingTemplateSaving.value = false
   }
