@@ -125,13 +125,9 @@ import { ref, watch, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { parseCSV, detectColumns, mapRows } from '../services/csvParser.js'
 import { showError, showSuccess } from '../composables/useModal.js'
-import { showError, showSuccess } from '../composables/useModal.js'
 
 const bankSource = ref('')
 const bankSources = ref([])
-const sourcesError = ref(false)
-const sourcesError = ref(false)
-const sourcesError = ref(false)
 const sourcesError = ref(false)
 const skipLines = ref(0)
 const parsedHeaders = ref([])
@@ -205,18 +201,6 @@ function reparse() {
       const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
       columnMapping.value[h] = dbCol || ''
     }
-  })
-
-  updatePreview()
-}
-  })
-
-  updatePreview()
-}
-  })
-
-  updatePreview()
-}
   })
 
   updatePreview()

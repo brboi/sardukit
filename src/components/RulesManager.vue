@@ -2,6 +2,10 @@
   <div>
     <h2>Gestionnaire de règles</h2>
 
+    <p v-if="defaultsError" class="text-warning mb-2">
+      Impossible de charger les valeurs par défaut. Les templates vides resteront vides.
+    </p>
+
     <div v-if="loading">Chargement des règles...</div>
 
     <template v-else>
@@ -132,6 +136,7 @@ const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
 
 const defaults = ref({})
+const defaultsError = ref(false)
 
 onMounted(async () => {
   await loadDefaults()
@@ -143,9 +148,12 @@ async function loadDefaults() {
     const res = await apiFetch('/api/settings?key=defaults')
     if (res.ok) {
       defaults.value = await res.json()
+      defaultsError.value = false
+    } else {
+      defaultsError.value = true
     }
   } catch {
-    // Defaults not available, will use fallbacks
+    defaultsError.value = true
   }
 }
 
