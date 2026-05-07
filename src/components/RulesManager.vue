@@ -97,41 +97,16 @@
         </div>
       </details>
 
-      <details style="margin-top: 2rem">
-        <summary><strong>Template de prompt IA (règles)</strong></summary>
-        <div class="grid" style="margin-top: 1rem">
-          <textarea
-            v-model="promptTemplate"
-            placeholder="Template Mustache pour le prompt IA"
-            rows="12"
-            style="font-family: monospace; font-size: 0.85rem"
-          ></textarea>
-          <div>
-            <button @click="saveTemplate" :disabled="templateSaving">
-              {{ templateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
-            </button>
-            <button @click="resetTemplate">Réinitialiser par défaut</button>
-          </div>
-        </div>
-      </details>
-
-      <details style="margin-top: 2rem">
-        <summary><strong>Template de prompt IA (mapping colonnes)</strong></summary>
-        <div class="grid" style="margin-top: 1rem">
-          <textarea
-            v-model="columnMappingTemplate"
-            placeholder="Template Mustache pour le prompt de mapping de colonnes"
-            rows="12"
-            style="font-family: monospace; font-size: 0.85rem"
-          ></textarea>
-          <div>
-            <button @click="saveColumnMappingTemplate" :disabled="columnMappingTemplateSaving">
-              {{ columnMappingTemplateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
-            </button>
-            <button @click="resetColumnMappingTemplate">Réinitialiser par défaut</button>
-          </div>
-        </div>
-      </details>
+      <TemplateEditor
+        title="Template de prompt IA (règles)"
+        storage-key="gemini_prompt_template"
+        :default-value="defaults.gemini_prompt_template"
+      />
+      <TemplateEditor
+        title="Template de prompt IA (mapping colonnes)"
+        storage-key="column_mapping_prompt_template"
+        :default-value="defaults.column_mapping_prompt_template"
+      />
     </template>
   </div>
 </template>
@@ -140,6 +115,7 @@
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { showError, showSuccess } from '../composables/useModal.js'
+import TemplateEditor from './TemplateEditor.vue'
 
 const RULES_KEY = 'categorization_rules'
 const rules = ref([])
@@ -155,21 +131,11 @@ const geminiDescriptions = ref('')
 const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
 
-const TEMPLATE_KEY = 'gemini_prompt_template'
-const promptTemplate = ref('')
-const templateSaving = ref(false)
-
-const COLUMN_MAPPING_TEMPLATE_KEY = 'column_mapping_prompt_template'
-const columnMappingTemplate = ref('')
-const columnMappingTemplateSaving = ref(false)
-
 const defaults = ref({})
 
 onMounted(async () => {
   await loadDefaults()
   await loadRules()
-  await loadTemplate()
-  await loadColumnMappingTemplate()
 })
 
 async function loadDefaults() {
@@ -287,81 +253,5 @@ function addGeminiRule() {
   })
   geminiSuggestion.value = null
   geminiDescriptions.value = ''
-}
-
-async function loadTemplate() {
-  try {
-    const res = await apiFetch(`/api/settings?key=${TEMPLATE_KEY}`)
-    if (res.ok) {
-      const data = await res.json()
-      promptTemplate.value = data.value || defaults.value.gemini_prompt_template || ''
-    } else {
-      promptTemplate.value = defaults.value.gemini_prompt_template || ''
-    }
-  } catch {
-    promptTemplate.value = defaults.value.gemini_prompt_template || ''
-  }
-}
-
-async function saveTemplate() {
-  templateSaving.value = true
-  try {
-    const res = await apiFetch('/api/settings', {
-      method: 'POST',
-      body: JSON.stringify({ key: TEMPLATE_KEY, value: promptTemplate.value }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
-    } else {
-      showSuccess('Template sauvegardé')
-    }
-  } catch (e) {
-    showError('Erreur réseau: ' + e.message)
-  } finally {
-    templateSaving.value = false
-  }
-}
-
-function resetTemplate() {
-  promptTemplate.value = defaults.value.gemini_prompt_template || ''
-}
-
-async function loadColumnMappingTemplate() {
-  try {
-    const res = await apiFetch(`/api/settings?key=${COLUMN_MAPPING_TEMPLATE_KEY}`)
-    if (res.ok) {
-      const data = await res.json()
-      columnMappingTemplate.value = data.value || defaults.value.column_mapping_prompt_template || ''
-    } else {
-      columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
-    }
-  } catch {
-    columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
-  }
-}
-
-async function saveColumnMappingTemplate() {
-  columnMappingTemplateSaving.value = true
-  try {
-    const res = await apiFetch('/api/settings', {
-      method: 'POST',
-      body: JSON.stringify({ key: COLUMN_MAPPING_TEMPLATE_KEY, value: columnMappingTemplate.value }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
-    } else {
-      showSuccess('Template sauvegardé')
-    }
-  } catch (e) {
-    showError('Erreur réseau: ' + e.message)
-  } finally {
-    columnMappingTemplateSaving.value = false
-  }
-}
-
-function resetColumnMappingTemplate() {
-  columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
 }
 </script>
