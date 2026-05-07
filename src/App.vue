@@ -4,6 +4,7 @@ import { getAuthToken, apiFetch, clearAuthToken } from './services/api.js'
 import CsvImport from './components/CsvImport.vue'
 import RulesManager from './components/RulesManager.vue'
 import ReportGenerator from './components/ReportGenerator.vue'
+import ModalDialog from './components/ModalDialog.vue'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -122,5 +123,6 @@ window.handleCredentialResponse = handleCredentialResponse
         data-logo_alignment="left"
       ></div>
     </template>
+    <ModalDialog />
   </main>
 </template>
