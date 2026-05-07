@@ -9,17 +9,7 @@ Et ces catégories existantes : {{#context.categories}}{{.}}, {{/context.categor
 
 Et ces tags existants : {{#context.tags}}{{.}}, {{/context.tags}}
 
-Suggère UNE règle qui couvrirait le plus de transactions. Retourne UNIQUEMENT du JSON valide avec cette structure exacte :
-{
-  "pattern": "le regex ou le texte à matcher",
-  "match_type": "contains",
-  "category": "nom de catégorie suggéré",
-  "sub_category": null,
-  "tags": [],
-  "explanation": "brève explication de pourquoi cette règle a du sens"
-}
-
-N'inclus aucun texte avant ou après le JSON.`;
+Suggère UNE règle qui couvrirait le plus de transactions.`;
 
 const DEFAULT_COLUMN_MAPPING_PROMPT = `Voici les en-têtes de colonnes d'un fichier CSV bancaire :
 {{#context.headers}}
@@ -27,16 +17,7 @@ const DEFAULT_COLUMN_MAPPING_PROMPT = `Voici les en-têtes de colonnes d'un fich
 {{/context.headers}}
 
 Mappe chaque en-tête à l'un de ces champs de base de données (ou laisse non mappé si aucun ne correspond) :
-sequence_number, extract_number, account_number, execution_date, accounting_date, value_date, amount, currency, transaction_type, counterparty_account, counterparty_name, counterparty_street, counterparty_city, communication, details, status, rejection_reason, bic, country_code
-
-Retourne UNIQUEMENT du JSON valide avec cette structure :
-{
-  "mapping": {
-    "nom de la colonne CSV": "nom du champ DB"
-  }
-}
-
-N'inclus aucun texte avant ou après le JSON.`;
+sequence_number, extract_number, account_number, execution_date, accounting_date, value_date, amount, currency, transaction_type, counterparty_account, counterparty_name, counterparty_street, counterparty_city, communication, details, status, rejection_reason, bic, country_code`;
 
 export function renderPrompt(template, context) {
   const tpl = template || DEFAULT_PROMPT_TEMPLATE;
