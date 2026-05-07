@@ -2,6 +2,10 @@
   <div>
     <h2>Importer CSV</h2>
 
+    <p v-if="sourcesError" class="text-warning mb-2">
+      Impossible de charger les sources bancaires.
+    </p>
+
     <!-- Top inputs: 3-column grid -->
     <div class="import-grid">
       <label>
@@ -125,6 +129,10 @@ import { showError, showSuccess } from '../composables/useModal.js'
 
 const bankSource = ref('')
 const bankSources = ref([])
+const sourcesError = ref(false)
+const sourcesError = ref(false)
+const sourcesError = ref(false)
+const sourcesError = ref(false)
 const skipLines = ref(0)
 const parsedHeaders = ref([])
 const parsedRows = ref([])
@@ -140,9 +148,12 @@ onMounted(async () => {
     const res = await apiFetch('/api/transactions?sources_only=1')
     if (res.ok) {
       bankSources.value = await res.json()
+      sourcesError.value = false
+    } else {
+      sourcesError.value = true
     }
   } catch {
-    // No sources yet
+    sourcesError.value = true
   }
 })
 
@@ -184,13 +195,30 @@ function reparse() {
   parsedRows.value = result.rows
 
   const autoMapping = detectColumns(result.headers)
+  const existingMapping = { ...columnMapping.value }
+
   columnMapping.value = {}
   result.headers.forEach((h, idx) => {
-    const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
-    columnMapping.value[h] = dbCol || ''
+    if (existingMapping[h]) {
+      columnMapping.value[h] = existingMapping[h]
+    } else {
+      const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
+      columnMapping.value[h] = dbCol || ''
+    }
   })
 
-  // Auto-update preview
+  updatePreview()
+}
+  })
+
+  updatePreview()
+}
+  })
+
+  updatePreview()
+}
+  })
+
   updatePreview()
 }
 
