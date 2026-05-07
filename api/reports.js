@@ -1,7 +1,8 @@
-import { neon } from '@neondatabase/serverless';
+import { withAuth } from './middleware/auth.js';
+import { getDb } from './utils/db.js';
 
-export default async function handler(req, res) {
-  const sql = neon(process.env.DATABASE_URL);
+async function handler(req, res) {
+  const sql = getDb();
 
   if (req.method === 'GET') {
     try {
@@ -13,15 +14,15 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { name, start_date, end_date, initial_balance } = req.body || {};
-    if (!start_date || !end_date) {
-      return res.status(400).json({ error: 'Missing start_date or end_date' });
+    const { name, year, initial_balance } = req.body || {};
+    if (!year || typeof year !== 'number' || year < 2000 || year > 2099) {
+      return res.status(400).json({ error: 'Missing or invalid year (2000-2099)' });
     }
 
     try {
       const rows = await sql`
-        INSERT INTO reports (name, start_date, end_date, initial_balance, final_balance)
-        VALUES (${name || 'Report'}, ${start_date}, ${end_date}, ${initial_balance || 0}, ${initial_balance || 0})
+        INSERT INTO reports (name, year, initial_balance, final_balance)
+        VALUES (${name || `Report ${year}`}, ${year}, ${initial_balance || 0}, ${initial_balance || 0})
         RETURNING *
       `;
       return res.status(201).json(rows[0]);
@@ -32,3 +33,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withAuth(handler);

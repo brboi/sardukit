@@ -1,8 +1,9 @@
-import { neon } from '@neondatabase/serverless';
+import { withAuth } from './middleware/auth.js';
+import { getDb } from './utils/db.js';
 import { applyRules } from '../../shared/rules.js';
 
-export default async function handler(req, res) {
-  const sql = neon(process.env.DATABASE_URL);
+async function handler(req, res) {
+  const sql = getDb();
 
   const reportId = req.query?.id;
   if (!reportId) {
@@ -16,14 +17,22 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Report not found' });
       }
 
+      const year = report[0].year;
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
+
       const transactions = await sql`
         SELECT * FROM transactions
-        WHERE date >= ${report[0].start_date} AND date <= ${report[0].end_date}
-        ORDER BY date
+        WHERE (execution_date >= ${startDate} AND execution_date <= ${endDate})
+           OR (accounting_date >= ${startDate} AND accounting_date <= ${endDate})
+           OR (value_date >= ${startDate} AND value_date <= ${endDate})
+        ORDER BY COALESCE(execution_date, accounting_date, value_date)
       `;
 
       const settings = await sql`SELECT value FROM settings WHERE key = 'categorization_rules' LIMIT 1`;
-      const rules = settings.length > 0 ? (typeof settings[0].value === 'string' ? JSON.parse(settings[0].value) : settings[0].value) : [];
+      const rules = settings.length > 0
+        ? (typeof settings[0].value === 'string' ? JSON.parse(settings[0].value) : settings[0].value)
+        : [];
 
       await sql`DELETE FROM report_transactions WHERE report_id = ${reportId}`;
 
@@ -74,3 +83,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withAuth(handler);
