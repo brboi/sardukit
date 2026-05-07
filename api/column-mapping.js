@@ -1,6 +1,7 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
-import { renderColumnMappingPrompt, DEFAULT_COLUMN_MAPPING_PROMPT } from './utils/template.js';
+import { renderColumnMappingPrompt } from './utils/template.js';
+import { ColumnMappingJsonSchema } from './schemas/column-mapping.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -33,13 +34,16 @@ async function handler(req, res) {
     const prompt = renderColumnMappingPrompt(template, headers);
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 1000 },
+          generationConfig: {
+            temperature: 0,
+            response_schema: ColumnMappingJsonSchema,
+          },
         }),
       }
     );
@@ -50,9 +54,7 @@ async function handler(req, res) {
     }
 
     const data = await response.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    text = text.replace(/^```json\s*/i, '').replace(/```\s*$/g, '').trim();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     try {
       const result = JSON.parse(text);
