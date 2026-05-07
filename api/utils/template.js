@@ -1,29 +1,51 @@
 import Mustache from 'mustache';
 
-const DEFAULT_PROMPT_TEMPLATE = `Given these bank transaction descriptions:
+const DEFAULT_PROMPT_TEMPLATE = `Étant donné ces descriptions de transactions bancaires :
 {{#context.transactions}}
 {{.}}
 {{/context.transactions}}
 
-And these existing categories: {{#context.categories}}{{.}}, {{/context.categories}}
+Et ces catégories existantes : {{#context.categories}}{{.}}, {{/context.categories}}
 
-And these existing tags: {{#context.tags}}{{.}}, {{/context.tags}}
+Et ces tags existants : {{#context.tags}}{{.}}, {{/context.tags}}
 
-Suggest ONE rule that would cover the most transactions. Return ONLY valid JSON with this exact structure:
+Suggère UNE règle qui couvrirait le plus de transactions. Retourne UNIQUEMENT du JSON valide avec cette structure exacte :
 {
-  "pattern": "the regex or text pattern to match",
+  "pattern": "le regex ou le texte à matcher",
   "match_type": "contains",
-  "category": "suggested category name",
+  "category": "nom de catégorie suggéré",
   "sub_category": null,
   "tags": [],
-  "explanation": "brief explanation of why this rule makes sense"
+  "explanation": "brève explication de pourquoi cette règle a du sens"
 }
 
-Do not include any text before or after the JSON.`;
+N'inclus aucun texte avant ou après le JSON.`;
+
+const DEFAULT_COLUMN_MAPPING_PROMPT = `Voici les en-têtes de colonnes d'un fichier CSV bancaire :
+{{#context.headers}}
+- {{.}}
+{{/context.headers}}
+
+Mappe chaque en-tête à l'un de ces champs de base de données (ou laisse non mappé si aucun ne correspond) :
+sequence_number, extract_number, account_number, execution_date, accounting_date, value_date, amount, currency, transaction_type, counterparty_account, counterparty_name, counterparty_street, counterparty_city, communication, details, status, rejection_reason, bic, country_code
+
+Retourne UNIQUEMENT du JSON valide avec cette structure :
+{
+  "mapping": {
+    "nom de la colonne CSV": "nom du champ DB"
+  }
+}
+
+N'inclus aucun texte avant ou après le JSON.`;
 
 export function renderPrompt(template, context) {
   const tpl = template || DEFAULT_PROMPT_TEMPLATE;
   return Mustache.render(tpl, { context });
 }
 
-export { DEFAULT_PROMPT_TEMPLATE };
+export function renderColumnMappingPrompt(template, headers) {
+  const tpl = template || DEFAULT_COLUMN_MAPPING_PROMPT;
+  return Mustache.render(tpl, { context: { headers } });
+}
+
+export { DEFAULT_PROMPT_TEMPLATE, DEFAULT_COLUMN_MAPPING_PROMPT };
