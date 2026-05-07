@@ -1,10 +1,14 @@
-export default async function handler(req, res) {
+import { withAuth } from './middleware/auth.js';
+import { getDb } from './utils/db.js';
+import { renderPrompt } from './utils/template.js';
+
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { descriptions, categories } = req.body || {};
-  if (!descriptions || !Array.isArray(descriptions)) {
+  if (!descriptions || !Array.isArray(descriptions) || descriptions.length === 0) {
     return res.status(400).json({ error: 'Missing descriptions array' });
   }
 
@@ -13,29 +17,46 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
   }
 
-  const categoryList = categories ? categories.join(', ') : 'none';
-  const descList = descriptions.slice(0, 20).join('\n');
-
-  const prompt = `Given these bank transaction descriptions:
-${descList}
-
-And these existing categories: ${categoryList}
-
-Suggest ONE rule that would cover the most transactions. Return ONLY valid JSON with this exact structure:
-{
-  "pattern": "the regex or text pattern to match",
-  "match_type": "contains",
-  "category": "suggested category name",
-  "sub_category": null,
-  "tags": [],
-  "explanation": "brief explanation of why this rule makes sense"
-}
-
-Do not include any text before or after the JSON.`;
+  const sql = getDb();
 
   try {
+    // Fetch template from DB
+    let template = null;
+    try {
+      const rows = await sql`SELECT value FROM settings WHERE key = 'gemini_prompt_template' LIMIT 1`;
+      if (rows.length > 0) {
+        template = typeof rows[0].value === 'string' ? rows[0].value : null;
+      }
+    } catch {
+      // Use default template
+    }
+
+    // Fetch existing rules to extract tags
+    let tags = [];
+    try {
+      const settingsRows = await sql`SELECT value FROM settings WHERE key = 'categorization_rules' LIMIT 1`;
+      if (settingsRows.length > 0) {
+        const rules = typeof settingsRows[0].value === 'string'
+          ? JSON.parse(settingsRows[0].value)
+          : settingsRows[0].value;
+        if (Array.isArray(rules)) {
+          tags = [...new Set(rules.flatMap(r => r.tags || []))];
+        }
+      }
+    } catch {
+      // No rules yet
+    }
+
+    const context = {
+      transactions: descriptions,
+      categories: categories || [],
+      tags,
+    };
+
+    const prompt = renderPrompt(template, context);
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,9 +81,11 @@ Do not include any text before or after the JSON.`;
       const rule = JSON.parse(text);
       return res.status(200).json(rule);
     } catch {
-      return res.status(500).json({ error: 'Failed to parse Gemini response as JSON', raw: text });
+      return res.status(500).json({ error: 'Failed to parse response as JSON', raw: text });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 }
+
+export default withAuth(handler);
