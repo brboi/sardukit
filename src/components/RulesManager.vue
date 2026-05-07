@@ -2,10 +2,6 @@
   <div>
     <h2>Gestionnaire de règles</h2>
 
-    <p v-if="defaultsError" class="text-warning mb-2">
-      Impossible de charger les valeurs par défaut. Les templates vides resteront vides.
-    </p>
-
     <div v-if="loading">Chargement des règles...</div>
 
     <template v-else>
@@ -118,7 +114,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
-import { showError, showSuccess } from '../composables/useModal.js'
 import TemplateEditor from './TemplateEditor.vue'
 
 const RULES_KEY = 'categorization_rules'
@@ -136,7 +131,6 @@ const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
 
 const defaults = ref({})
-const defaultsError = ref(false)
 
 onMounted(async () => {
   await loadDefaults()
@@ -148,12 +142,9 @@ async function loadDefaults() {
     const res = await apiFetch('/api/settings?key=defaults')
     if (res.ok) {
       defaults.value = await res.json()
-      defaultsError.value = false
-    } else {
-      defaultsError.value = true
     }
   } catch {
-    defaultsError.value = true
+    // Defaults not available, will use fallbacks
   }
 }
 
@@ -211,12 +202,12 @@ async function saveRules() {
     })
     if (!res.ok) {
       const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      showSuccess('Règles sauvegardées')
+      alert('Règles sauvegardées')
     }
   } catch (e) {
-    showError('Erreur réseau: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     saving.value = false
   }
@@ -236,12 +227,12 @@ async function suggestRule() {
     })
     if (!res.ok) {
       const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       geminiSuggestion.value = await res.json()
     }
   } catch (e) {
-    showError('Erreur réseau: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     geminiLoading.value = false
   }
