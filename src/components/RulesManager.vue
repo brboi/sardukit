@@ -23,7 +23,7 @@
         <tbody>
           <tr v-for="(rule, idx) in rules" :key="rule.id">
             <td>
-              <input type="number" v-model.number="rule.priority" style="width: 60px" />
+              <input type="number" v-model.number="rule.priority" class="w-60" />
             </td>
             <td><input type="text" v-model="rule.pattern" /></td>
             <td>
@@ -46,7 +46,7 @@
         </tbody>
       </table>
 
-      <div class="grid" style="margin-top: 1rem">
+      <div class="grid mt-2">
         <h3>Ajouter une règle</h3>
         <input type="text" v-model="newRule.pattern" placeholder="Motif" />
         <select v-model="newRule.match_type">
@@ -61,13 +61,13 @@
         <button @click="addRule">Ajouter</button>
       </div>
 
-      <button @click="saveRules" :disabled="saving" style="margin-top: 1rem">
+      <button @click="saveRules" :disabled="saving" class="mt-2">
         {{ saving ? 'Sauvegarde...' : 'Sauvegarder toutes les règles' }}
       </button>
 
-      <details style="margin-top: 2rem">
+      <details class="mt-3">
         <summary><strong>Suggérer une règle avec l'IA Gemini</strong></summary>
-        <div class="grid" style="margin-top: 1rem">
+        <div class="grid mt-2">
           <h4>Coller les descriptions de transactions</h4>
           <textarea
             v-model="geminiDescriptions"
@@ -79,9 +79,9 @@
           </button>
         </div>
 
-        <div v-if="geminiSuggestion" style="margin-top: 1rem; border: 1px solid var(--border); padding: 1rem">
+        <div v-if="geminiSuggestion" class="mt-2 bordered-card">
           <h4>Règle proposée</h4>
-          <p v-if="geminiSuggestion.explanation" style="font-style: italic; color: var(--text)">
+          <p v-if="geminiSuggestion.explanation" class="text-muted italic">
             {{ geminiSuggestion.explanation }}
           </p>
           <label>Motif <input type="text" v-model="geminiSuggestion.pattern" /></label>
@@ -101,41 +101,16 @@
         </div>
       </details>
 
-      <details style="margin-top: 2rem">
-        <summary><strong>Template de prompt IA (règles)</strong></summary>
-        <div class="grid" style="margin-top: 1rem">
-          <textarea
-            v-model="promptTemplate"
-            placeholder="Template Mustache pour le prompt IA"
-            rows="12"
-            style="font-family: monospace; font-size: 0.85rem"
-          ></textarea>
-          <div>
-            <button @click="saveTemplate" :disabled="templateSaving">
-              {{ templateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
-            </button>
-            <button @click="resetTemplate">Réinitialiser par défaut</button>
-          </div>
-        </div>
-      </details>
-
-      <details style="margin-top: 2rem">
-        <summary><strong>Template de prompt IA (mapping colonnes)</strong></summary>
-        <div class="grid" style="margin-top: 1rem">
-          <textarea
-            v-model="columnMappingTemplate"
-            placeholder="Template Mustache pour le prompt de mapping de colonnes"
-            rows="12"
-            style="font-family: monospace; font-size: 0.85rem"
-          ></textarea>
-          <div>
-            <button @click="saveColumnMappingTemplate" :disabled="columnMappingTemplateSaving">
-              {{ columnMappingTemplateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
-            </button>
-            <button @click="resetColumnMappingTemplate">Réinitialiser par défaut</button>
-          </div>
-        </div>
-      </details>
+      <TemplateEditor
+        title="Template de prompt IA (règles)"
+        storage-key="gemini_prompt_template"
+        :default-value="defaults.gemini_prompt_template"
+      />
+      <TemplateEditor
+        title="Template de prompt IA (mapping colonnes)"
+        storage-key="column_mapping_prompt_template"
+        :default-value="defaults.column_mapping_prompt_template"
+      />
     </template>
   </div>
 </template>
@@ -144,6 +119,7 @@
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { showError, showSuccess } from '../composables/useModal.js'
+import TemplateEditor from './TemplateEditor.vue'
 
 const RULES_KEY = 'categorization_rules'
 const rules = ref([])
