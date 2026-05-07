@@ -14,6 +14,10 @@ export async function apiFetch(path, options = {}) {
   };
 
   const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    clearAuthToken();
+    window.dispatchEvent(new CustomEvent('auth-expired'));
+  }
   return res;
 }
 
