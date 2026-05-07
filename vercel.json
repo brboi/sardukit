@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/health", "destination": "/api/health.js" },
     { "source": "/api/auth/verify", "destination": "/api/auth.js" },
     { "source": "/api/transactions", "destination": "/api/transactions.js" },
     { "source": "/api/settings", "destination": "/api/settings.js" },

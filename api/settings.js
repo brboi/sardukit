@@ -1,7 +1,8 @@
-import { neon } from '@neondatabase/serverless';
+import { withAuth } from './middleware/auth.js';
+import { getDb } from './utils/db.js';
 
-export default async function handler(req, res) {
-  const sql = neon(process.env.DATABASE_URL);
+async function handler(req, res) {
+  const sql = getDb();
 
   if (req.method === 'GET') {
     const { key } = req.query || {};
@@ -20,7 +21,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { key, value } = req.body || {};
-    if (!key) return res.status(400).json({ error: 'Missing key' });
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ error: 'Missing key' });
+    }
     try {
       await sql`
         INSERT INTO settings (key, value) VALUES (${key}, ${JSON.stringify(value)})
@@ -34,7 +37,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'DELETE') {
     const { key } = req.body || {};
-    if (!key) return res.status(400).json({ error: 'Missing key' });
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ error: 'Missing key' });
+    }
     try {
       await sql`DELETE FROM settings WHERE key = ${key}`;
       return res.status(200).json({ deleted: key });
@@ -45,3 +50,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withAuth(handler);
