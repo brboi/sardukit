@@ -1,15 +1,16 @@
 <template>
   <div>
-    <h2>Import CSV</h2>
+    <h2>Importer CSV</h2>
 
-    <div v-if="!parsed">
+    <!-- Top inputs: 3-column grid -->
+    <div class="import-grid">
       <label>
-        Bank Source
+        Source bancaire
         <input
           type="text"
           v-model="bankSource"
           list="bank-sources"
-          placeholder="e.g. BNP, Belfius"
+          placeholder="ex. BNP, Belfius"
         />
         <datalist id="bank-sources">
           <option v-for="src in bankSources" :key="src" :value="src">{{ src }}</option>
@@ -17,55 +18,81 @@
       </label>
 
       <label>
-        Skip header lines
+        Lignes d'en-tête à ignorer
         <input type="number" v-model.number="skipLines" min="0" max="20" />
       </label>
 
       <label>
-        CSV File
+        Fichier CSV
         <input type="file" accept=".csv" @change="onFileSelect" />
       </label>
-
-      <div v-if="parsedHeaders.length" class="grid">
-        <h3>Column Mapping (auto-detected)</h3>
-        <div v-for="h in parsedHeaders" :key="h">
-          <label>{{ h }}</label>
-          <select v-model="columnMapping[h]">
-            <option value="">-- ignore --</option>
-            <option value="sequence_number">Sequence Number</option>
-            <option value="extract_number">Extract Number</option>
-            <option value="account_number">Account Number</option>
-            <option value="execution_date">Execution Date</option>
-            <option value="accounting_date">Accounting Date</option>
-            <option value="value_date">Value Date</option>
-            <option value="amount">Amount</option>
-            <option value="currency">Currency</option>
-            <option value="transaction_type">Transaction Type</option>
-            <option value="counterparty_account">Counterparty Account</option>
-            <option value="counterparty_name">Counterparty Name</option>
-            <option value="counterparty_street">Counterparty Street</option>
-            <option value="counterparty_city">Counterparty City</option>
-            <option value="communication">Communication</option>
-            <option value="details">Details</option>
-            <option value="status">Status</option>
-            <option value="rejection_reason">Rejection Reason</option>
-            <option value="bic">BIC</option>
-            <option value="country_code">Country Code</option>
-          </select>
-        </div>
-        <button @click="parsePreview">Preview</button>
-      </div>
     </div>
 
-    <div v-else>
-      <h3>Preview ({{ preview.length }} rows)</h3>
+    <!-- AI Column Mapping -->
+    <details v-if="parsedHeaders.length" style="margin-top: 1rem">
+      <summary><strong>Auto-matcher les colonnes avec l'IA</strong></summary>
+      <div style="margin-top: 0.5rem">
+        <button @click="aiMatchColumns" :disabled="aiMatching">
+          {{ aiMatching ? 'Analyse en cours...' : 'Matcher avec l\'IA' }}
+        </button>
+        <span v-if="aiMatchResult" style="margin-left: 1rem; font-size: 0.85rem; color: var(--accent)">
+          {{ aiMatchResult }}
+        </span>
+      </div>
+    </details>
+
+    <!-- Column Mapping -->
+    <div v-if="parsedHeaders.length" style="margin-top: 1rem">
+      <h3>Mapping des colonnes (auto-détecté)</h3>
+      <div class="mapping-grid">
+        <div
+          v-for="h in parsedHeaders"
+          :key="h"
+          class="mapping-card"
+          :class="{ 'auto-detected': columnMapping[h] }"
+        >
+          <div class="csv-header">{{ h }}</div>
+          <select v-model="columnMapping[h]">
+            <option value="">-- ignorer --</option>
+            <option value="sequence_number">N° de séquence</option>
+            <option value="extract_number">N° d'extrait</option>
+            <option value="account_number">N° de compte</option>
+            <option value="execution_date">Date d'exécution</option>
+            <option value="accounting_date">Date de comptabilisation</option>
+            <option value="value_date">Date valeur</option>
+            <option value="amount">Montant</option>
+            <option value="currency">Devise</option>
+            <option value="transaction_type">Type de transaction</option>
+            <option value="counterparty_account">Compte contrepartie</option>
+            <option value="counterparty_name">Nom contrepartie</option>
+            <option value="counterparty_street">Rue contrepartie</option>
+            <option value="counterparty_city">Ville contrepartie</option>
+            <option value="communication">Communication</option>
+            <option value="details">Détails</option>
+            <option value="status">Statut</option>
+            <option value="rejection_reason">Motif du refus</option>
+            <option value="bic">BIC</option>
+            <option value="country_code">Code pays</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Status indicator -->
+      <p v-if="preview.length" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--accent)">
+        {{ preview.length }} lignes prêtes à l'import
+      </p>
+    </div>
+
+    <!-- Preview table (reactive, shown when rows available) -->
+    <div v-if="preview.length" style="margin-top: 1.5rem">
+      <h3>Aperçu ({{ preview.length }} lignes)</h3>
       <table>
         <thead>
           <tr>
             <th>Date</th>
-            <th>Amount</th>
-            <th>Counterparty</th>
-            <th>Details</th>
+            <th>Montant</th>
+            <th>Contrepartie</th>
+            <th>Détails</th>
           </tr>
         </thead>
         <tbody>
@@ -77,12 +104,14 @@
           </tr>
         </tbody>
       </table>
-      <p v-if="preview.length > 20">... and {{ preview.length - 20 }} more</p>
+      <p v-if="preview.length > 20">... et {{ preview.length - 20 }} de plus</p>
 
-      <button @click="saveTransactions" :disabled="saving || !bankSource">
-        {{ saving ? 'Saving...' : 'Save All' }}
-      </button>
-      <button @click="reset">Back</button>
+      <div style="margin-top: 1rem; display: flex; gap: 0.5rem">
+        <button @click="saveTransactions" :disabled="saving || !bankSource">
+          {{ saving ? 'Sauvegarde...' : 'Tout sauvegarder' }}
+        </button>
+        <button @click="reset">Retour</button>
+      </div>
     </div>
   </div>
 </template>
@@ -100,8 +129,9 @@ const parsedRows = ref([])
 const rawText = ref('')
 const columnMapping = ref({})
 const preview = ref([])
-const parsed = ref(false)
 const saving = ref(false)
+const aiMatching = ref(false)
+const aiMatchResult = ref('')
 
 onMounted(async () => {
   try {
@@ -120,13 +150,28 @@ watch(skipLines, () => {
   }
 })
 
+// Reactive preview: update when columnMapping changes
+watch(columnMapping, () => {
+  if (parsedRows.value.length > 0) {
+    updatePreview()
+  }
+}, { deep: true })
+
 function onFileSelect(event) {
   const file = event.target.files[0]
   if (!file) return
+  if (!file.name.endsWith('.csv')) {
+    alert('Erreur: veuillez sélectionner un fichier CSV')
+    event.target.value = ''
+    return
+  }
   const reader = new FileReader()
   reader.onload = (e) => {
     rawText.value = e.target.result
     reparse()
+  }
+  reader.onerror = () => {
+    alert('Erreur: impossible de lire le fichier')
   }
   reader.readAsText(file)
 }
@@ -143,19 +188,51 @@ function reparse() {
     columnMapping.value[h] = dbCol || ''
   })
 
-  parsed.value = false
+  // Auto-update preview
+  updatePreview()
 }
 
-function parsePreview() {
+function updatePreview() {
   const colIdxMap = {}
   parsedHeaders.value.forEach((h, idx) => {
     if (columnMapping.value[h]) {
       colIdxMap[columnMapping.value[h]] = idx
     }
   })
-
   preview.value = mapRows(parsedRows.value, colIdxMap)
-  parsed.value = true
+}
+
+async function aiMatchColumns() {
+  if (!parsedHeaders.value.length) return
+  aiMatching.value = true
+  aiMatchResult.value = ''
+  try {
+    const res = await apiFetch('/api/column-mapping', {
+      method: 'POST',
+      body: JSON.stringify({ headers: parsedHeaders.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      aiMatchResult.value = 'Erreur: ' + (err.error || 'Inconnue')
+    } else {
+      const data = await res.json()
+      const mapping = data.mapping || {}
+      // Apply AI mapping, keeping existing user selections — batch update to avoid multiple watch triggers
+      const newMapping = { ...columnMapping.value }
+      parsedHeaders.value.forEach(h => {
+        if (mapping[h] && !newMapping[h]) {
+          newMapping[h] = mapping[h]
+        }
+      })
+      columnMapping.value = newMapping
+      const matched = Object.keys(mapping).filter(k => mapping[k]).length
+      aiMatchResult.value = `${matched} colonne(s) mappée(s) par l'IA`
+    }
+  } catch (e) {
+    aiMatchResult.value = 'Erreur réseau: ' + e.message
+  } finally {
+    aiMatching.value = false
+  }
 }
 
 async function saveTransactions() {
@@ -171,24 +248,25 @@ async function saveTransactions() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       const data = await res.json()
-      alert('Saved ' + data.saved + ' transactions')
+      alert(data.saved + ' transaction(s) sauvegardée(s)')
     }
   } catch (e) {
-    alert('Network error: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     saving.value = false
   }
 }
 
 function reset() {
-  parsed.value = false
   parsedHeaders.value = []
   parsedRows.value = []
   rawText.value = ''
   preview.value = []
   columnMapping.value = {}
+  aiMatchResult.value = ''
+  aiMatching.value = false
 }
 </script>
