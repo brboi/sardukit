@@ -96,6 +96,24 @@
           <button @click="geminiSuggestion = null">Dismiss</button>
         </div>
       </details>
+
+      <details style="margin-top: 2rem">
+        <summary><strong>AI Prompt Template</strong></summary>
+        <div class="grid" style="margin-top: 1rem">
+          <textarea
+            v-model="promptTemplate"
+            placeholder="Mustache template for AI prompt"
+            rows="12"
+            style="font-family: monospace; font-size: 0.85rem"
+          ></textarea>
+          <div>
+            <button @click="saveTemplate" :disabled="templateSaving">
+              {{ templateSaving ? 'Saving...' : 'Save Template' }}
+            </button>
+            <button @click="resetTemplate">Reset to Default</button>
+          </div>
+        </div>
+      </details>
     </template>
   </div>
 </template>
@@ -118,8 +136,34 @@ const geminiDescriptions = ref('')
 const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
 
+const TEMPLATE_KEY = 'gemini_prompt_template'
+const promptTemplate = ref('')
+const templateSaving = ref(false)
+
+const DEFAULT_TEMPLATE = `Given these bank transaction descriptions:
+{{#context.transactions}}
+{{.}}
+{{/context.transactions}}
+
+And these existing categories: {{#context.categories}}{{.}}, {{/context.categories}}
+
+And these existing tags: {{#context.tags}}{{.}}, {{/context.tags}}
+
+Suggest ONE rule that would cover the most transactions. Return ONLY valid JSON with this exact structure:
+{
+  "pattern": "the regex or text pattern to match",
+  "match_type": "contains",
+  "category": "suggested category name",
+  "sub_category": null,
+  "tags": [],
+  "explanation": "brief explanation of why this rule makes sense"
+}
+
+Do not include any text before or after the JSON.`
+
 onMounted(async () => {
   await loadRules()
+  await loadTemplate()
 })
 
 async function loadRules() {
@@ -226,5 +270,43 @@ function addGeminiRule() {
   })
   geminiSuggestion.value = null
   geminiDescriptions.value = ''
+}
+
+async function loadTemplate() {
+  try {
+    const res = await apiFetch(`/api/settings?key=${TEMPLATE_KEY}`)
+    if (res.ok) {
+      const data = await res.json()
+      promptTemplate.value = data.value || DEFAULT_TEMPLATE
+    } else {
+      promptTemplate.value = DEFAULT_TEMPLATE
+    }
+  } catch {
+    promptTemplate.value = DEFAULT_TEMPLATE
+  }
+}
+
+async function saveTemplate() {
+  templateSaving.value = true
+  try {
+    const res = await apiFetch('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ key: TEMPLATE_KEY, value: promptTemplate.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert('Error: ' + (err.error || 'Unknown error'))
+    } else {
+      alert('Template saved')
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message)
+  } finally {
+    templateSaving.value = false
+  }
+}
+
+function resetTemplate() {
+  promptTemplate.value = DEFAULT_TEMPLATE
 }
 </script>
