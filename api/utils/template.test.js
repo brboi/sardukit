@@ -43,8 +43,7 @@ describe('renderPrompt', () => {
     expect(result).toContain('desc1');
     expect(result).toContain('Cat1');
     expect(result).toContain('tag1');
-    expect(result).toContain('pattern');
-    expect(result).toContain('match_type');
+    expect(result).toContain('Suggère UNE règle');
   });
 });
 
@@ -74,7 +73,7 @@ describe('renderColumnMappingPrompt', () => {
 
   it('includes mapping structure in default template', () => {
     const result = renderColumnMappingPrompt(null, ['Test']);
-    expect(result).toContain('mapping');
+    expect(result).toContain('Mappe chaque en-tête');
     expect(result).toContain('Test');
   });
 });
