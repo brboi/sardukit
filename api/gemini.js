@@ -1,6 +1,7 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
 import { renderPrompt } from './utils/template.js';
+import { RuleSuggestionJsonSchema } from './schemas/rule-suggestion.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -20,7 +21,6 @@ async function handler(req, res) {
   const sql = getDb();
 
   try {
-    // Fetch template from DB
     let template = null;
     try {
       const rows = await sql`SELECT value FROM settings WHERE key = 'gemini_prompt_template' LIMIT 1`;
@@ -31,7 +31,6 @@ async function handler(req, res) {
       // Use default template
     }
 
-    // Fetch existing rules to extract tags
     let tags = [];
     try {
       const settingsRows = await sql`SELECT value FROM settings WHERE key = 'categorization_rules' LIMIT 1`;
@@ -56,13 +55,16 @@ async function handler(req, res) {
     const prompt = renderPrompt(template, context);
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
+          generationConfig: {
+            temperature: 0,
+            response_schema: RuleSuggestionJsonSchema,
+          },
         }),
       }
     );
@@ -73,9 +75,7 @@ async function handler(req, res) {
     }
 
     const data = await response.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    text = text.replace(/^```json\s*/i, '').replace(/```\s*$/g, '').trim();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     try {
       const rule = JSON.parse(text);
