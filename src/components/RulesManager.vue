@@ -121,6 +121,7 @@ import { apiFetch } from '../services/api.js'
 import { showError, showSuccess } from '../composables/useModal.js'
 import TemplateEditor from './TemplateEditor.vue'
 
+
 const RULES_KEY = 'categorization_rules'
 const rules = ref([])
 const loading = ref(true)
