@@ -6,7 +6,6 @@
       Impossible de charger les sources bancaires.
     </p>
 
-    <!-- Top inputs: 3-column grid -->
     <div class="import-grid">
       <label>
         Source bancaire
@@ -32,21 +31,19 @@
       </label>
     </div>
 
-    <!-- AI Column Mapping -->
-    <details v-if="parsedHeaders.length" style="margin-top: 1rem">
+    <details v-if="parsedHeaders.length" class="mt-2">
       <summary><strong>Auto-matcher les colonnes avec l'IA</strong></summary>
-      <div style="margin-top: 0.5rem">
+      <div class="mt-1">
         <button @click="aiMatchColumns" :disabled="aiMatching">
           {{ aiMatching ? 'Analyse en cours...' : 'Matcher avec l\'IA' }}
         </button>
-        <span v-if="aiMatchResult" style="margin-left: 1rem; font-size: 0.85rem; color: var(--accent)">
+        <span v-if="aiMatchResult" class="ml-2 text-sm text-accent">
           {{ aiMatchResult }}
         </span>
       </div>
     </details>
 
-    <!-- Column Mapping -->
-    <div v-if="parsedHeaders.length" style="margin-top: 1rem">
+    <div v-if="parsedHeaders.length" class="mt-2">
       <h3>Mapping des colonnes (auto-détecté)</h3>
       <div class="mapping-grid">
         <div
@@ -58,59 +55,37 @@
           <div class="csv-header">{{ h }}</div>
           <select v-model="columnMapping[h]">
             <option value="">-- ignorer --</option>
-            <option value="sequence_number">N° de séquence</option>
-            <option value="extract_number">N° d'extrait</option>
-            <option value="account_number">N° de compte</option>
-            <option value="execution_date">Date d'exécution</option>
-            <option value="accounting_date">Date de comptabilisation</option>
-            <option value="value_date">Date valeur</option>
-            <option value="amount">Montant</option>
-            <option value="currency">Devise</option>
-            <option value="transaction_type">Type de transaction</option>
-            <option value="counterparty_account">Compte contrepartie</option>
-            <option value="counterparty_name">Nom contrepartie</option>
-            <option value="counterparty_street">Rue contrepartie</option>
-            <option value="counterparty_city">Ville contrepartie</option>
-            <option value="communication">Communication</option>
-            <option value="details">Détails</option>
-            <option value="status">Statut</option>
-            <option value="rejection_reason">Motif du refus</option>
-            <option value="bic">BIC</option>
-            <option value="country_code">Code pays</option>
+            <option v-for="(label, dbField) in COLUMN_LABELS" :key="dbField" :value="dbField">
+              {{ label }}
+            </option>
           </select>
         </div>
       </div>
 
-      <!-- Status indicator -->
-      <p v-if="preview.length" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--accent)">
+      <p v-if="preview.length" class="text-sm text-accent mt-1">
         {{ preview.length }} lignes prêtes à l'import
       </p>
     </div>
 
-    <!-- Preview table (reactive, shown when rows available) -->
-    <div v-if="preview.length" style="margin-top: 1.5rem">
+    <div v-if="preview.length" class="mt-3">
       <h3>Aperçu ({{ preview.length }} lignes)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Montant</th>
-            <th>Contrepartie</th>
-            <th>Détails</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, i) in preview.slice(0, 20)" :key="i">
-            <td>{{ row.execution_date || row.accounting_date || row.value_date || '-' }}</td>
-            <td>{{ row.amount }}</td>
-            <td>{{ row.counterparty_name || '-' }}</td>
-            <td>{{ (row.details || '').slice(0, 80) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="overflow-auto">
+        <table>
+          <thead>
+            <tr>
+              <th v-for="col in previewColumns" :key="col">{{ colLabel(col) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, i) in preview.slice(0, 20)" :key="i">
+              <td v-for="col in previewColumns" :key="col">{{ row[col] || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <p v-if="preview.length > 20">... et {{ preview.length - 20 }} de plus</p>
 
-      <div style="margin-top: 1rem; display: flex; gap: 0.5rem">
+      <div class="flex gap-1 mt-2">
         <button @click="saveTransactions" :disabled="saving || !bankSource">
           {{ saving ? 'Sauvegarde...' : 'Tout sauvegarder' }}
         </button>
@@ -121,14 +96,35 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { parseCSV, detectColumns, mapRows } from '../services/csvParser.js'
 import { showError, showSuccess } from '../composables/useModal.js'
 
+const COLUMN_LABELS = {
+  sequence_number: 'N° de séquence',
+  extract_number: "N° d'extrait",
+  account_number: 'N° de compte',
+  execution_date: "Date d'exécution",
+  accounting_date: 'Date de comptabilisation',
+  value_date: 'Date valeur',
+  amount: 'Montant',
+  currency: 'Devise',
+  transaction_type: 'Type de transaction',
+  counterparty_account: 'Compte contrepartie',
+  counterparty_name: 'Nom contrepartie',
+  counterparty_street: 'Rue contrepartie',
+  counterparty_city: 'Ville contrepartie',
+  communication: 'Communication',
+  details: 'Détails',
+  status: 'Statut',
+  rejection_reason: 'Motif du refus',
+  bic: 'BIC',
+  country_code: 'Code pays',
+}
+
 const bankSource = ref('')
 const bankSources = ref([])
-const sourcesError = ref(false)
 const skipLines = ref(0)
 const parsedHeaders = ref([])
 const parsedRows = ref([])
@@ -138,6 +134,16 @@ const preview = ref([])
 const saving = ref(false)
 const aiMatching = ref(false)
 const aiMatchResult = ref('')
+const sourcesError = ref(false)
+
+const previewColumns = computed(() => {
+  if (preview.value.length === 0) return []
+  return Object.keys(preview.value[0])
+})
+
+function colLabel(key) {
+  return COLUMN_LABELS[key] || key
+}
 
 onMounted(async () => {
   try {
@@ -159,7 +165,6 @@ watch(skipLines, () => {
   }
 })
 
-// Reactive preview: update when columnMapping changes
 watch(columnMapping, () => {
   if (parsedRows.value.length > 0) {
     updatePreview()
@@ -191,13 +196,18 @@ function reparse() {
   parsedRows.value = result.rows
 
   const autoMapping = detectColumns(result.headers)
+  const existingMapping = { ...columnMapping.value }
+
   columnMapping.value = {}
   result.headers.forEach((h, idx) => {
-    const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
-    columnMapping.value[h] = dbCol || ''
+    if (existingMapping[h]) {
+      columnMapping.value[h] = existingMapping[h]
+    } else {
+      const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
+      columnMapping.value[h] = dbCol || ''
+    }
   })
 
-  // Auto-update preview
   updatePreview()
 }
 
@@ -226,7 +236,6 @@ async function aiMatchColumns() {
     } else {
       const data = await res.json()
       const mapping = data.mapping || {}
-      // Apply AI mapping, keeping existing user selections — batch update to avoid multiple watch triggers
       const newMapping = { ...columnMapping.value }
       parsedHeaders.value.forEach(h => {
         if (mapping[h] && !newMapping[h]) {
