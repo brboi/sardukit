@@ -140,7 +140,6 @@
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { showError, showSuccess } from '../composables/useModal.js'
-import { showError, showSuccess } from '../composables/useModal.js'
 
 const RULES_KEY = 'categorization_rules'
 const rules = ref([])
