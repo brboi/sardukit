@@ -1,4 +1,4 @@
-import { withAuth } from './middleware/auth.js';
+import { withAuth } from '../middleware/auth.js';
 import { getDb } from './utils/db.js';
 import { applyRules } from '../../shared/rules.js';
 
@@ -47,7 +47,7 @@ async function handler(req, res) {
           INSERT INTO report_transactions (report_id, transaction_id, category, sub_category, tags)
           VALUES (${reportId}, ${t.id}, ${category}, ${subCategory}, ${JSON.stringify(tags)})
         `;
-        totalAmount += parseFloat(t.amount);
+        totalAmount += parseFloat(t.amount) || 0;
       }
 
       const finalBalance = parseFloat(report[0].initial_balance) + totalAmount;

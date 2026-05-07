@@ -6,9 +6,6 @@ import { getDb } from './utils/db.js';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const JWT_EXPIRY = '24h';
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const JWT_EXPIRY = '24h';
-
 async function getWhitelist() {
   const envEmails = process.env.ALLOWED_EMAILS;
   if (envEmails) {
@@ -64,6 +61,6 @@ export default async function handler(req, res) {
 
     res.status(200).json({ token: sessionToken, email });
   } catch (err) {
-    res.status(401).json({ error: 'Invalid token', detail: err.message });
+    res.status(401).json({ error: 'Invalid token' });
   }
 }
