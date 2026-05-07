@@ -1,35 +1,35 @@
 <template>
   <div>
-    <h2>Report Generator</h2>
+    <h2>Générateur de rapport</h2>
 
     <div v-if="!currentReport">
-      <h3>Create New Report</h3>
+      <h3>Créer un nouveau rapport</h3>
       <div class="grid">
-        <label>Name <input type="text" v-model="form.name" placeholder="Report name" /></label>
-        <label>Year <input type="number" v-model.number="form.year" min="2000" max="2099" placeholder="2025" /></label>
-        <label>Initial Balance <input type="number" step="0.01" v-model.number="form.initial_balance" /></label>
+        <label>Nom <input type="text" v-model="form.name" placeholder="Nom du rapport" /></label>
+        <label>Année <input type="number" v-model.number="form.year" min="2000" max="2099" placeholder="2025" /></label>
+        <label>Solde initial <input type="number" step="0.01" v-model.number="form.initial_balance" /></label>
       </div>
       <button @click="createReport" :disabled="creating || !form.year">
-        {{ creating ? 'Creating...' : 'Create Report' }}
+        {{ creating ? 'Création...' : 'Créer le rapport' }}
       </button>
     </div>
 
     <template v-else>
       <h3>{{ currentReport.name }}</h3>
-      <p>Year: {{ currentReport.year }}</p>
+      <p>Année : {{ currentReport.year }}</p>
 
       <div class="grid">
         <button @click="generateReport" :disabled="generating">
-          {{ generating ? 'Generating...' : 'Generate / Re-scan' }}
+          {{ generating ? 'Génération...' : 'Générer / Re-scanner' }}
         </button>
-        <button @click="currentReport = null">New Report</button>
+        <button @click="currentReport = null">Nouveau rapport</button>
       </div>
 
       <div v-if="breakdown.length" style="margin-top: 2rem">
-        <h3>Balance Summary (Bilan)</h3>
+        <h3>Résumé du bilan</h3>
         <table>
           <thead>
-            <tr><th>Category</th><th>Sub-Category</th><th>Count</th><th>Total</th></tr>
+            <tr><th>Catégorie</th><th>Sous-catégorie</th><th>Nombre</th><th>Total</th></tr>
           </thead>
           <tbody>
             <tr v-for="row in breakdown" :key="row.category + row.sub_category">
@@ -41,25 +41,25 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="3"><strong>Initial Balance</strong></td>
+              <td colspan="3"><strong>Solde initial</strong></td>
               <td><strong>{{ formatCurrency(currentReport.initial_balance) }}</strong></td>
             </tr>
             <tr>
-              <td colspan="3"><strong>Sum of Transactions</strong></td>
+              <td colspan="3"><strong>Somme des transactions</strong></td>
               <td><strong>{{ formatCurrency(sumTransactions) }}</strong></td>
             </tr>
             <tr :class="{ 'text-error': !isValid }">
-              <td colspan="3"><strong>Expected Final Balance</strong></td>
+              <td colspan="3"><strong>Solde final attendu</strong></td>
               <td><strong>{{ formatCurrency(currentReport.initial_balance + sumTransactions) }}</strong></td>
             </tr>
             <tr>
-              <td colspan="3"><strong>Reported Final Balance</strong></td>
+              <td colspan="3"><strong>Solde final déclaré</strong></td>
               <td><strong>{{ formatCurrency(currentReport.final_balance) }}</strong></td>
             </tr>
           </tfoot>
         </table>
         <p v-if="!isValid" style="color: var(--pico-color-red)">
-          Warning: Balances do not match!
+          Attention : les soldes ne correspondent pas !
         </p>
       </div>
     </template>
@@ -106,13 +106,13 @@ async function createReport() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       currentReport.value = await res.json()
       breakdown.value = []
     }
   } catch (e) {
-    alert('Network error: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     creating.value = false
   }
@@ -127,15 +127,15 @@ async function generateReport() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       const result = await res.json()
-      alert(`Processed ${result.transactions_processed} transactions`)
+      alert(result.transactions_processed + ' transaction(s) traitée(s)')
       currentReport.value.final_balance = result.final_balance
       await loadBreakdown()
     }
   } catch (e) {
-    alert('Network error: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     generating.value = false
   }
