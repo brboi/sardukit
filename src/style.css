@@ -334,3 +334,87 @@ code {
     background: var(--accent-bg);
   }
 }
+
+/* Utility classes */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.ml-2 { margin-left: 1rem; }
+
+.flex { display: flex; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+
+.text-sm { font-size: 0.85rem; }
+.text-muted { color: var(--text); }
+.text-accent { color: var(--accent); }
+.text-warning { color: #e67e22; }
+.font-mono { font-family: var(--mono); }
+.w-60 { width: 60px; }
+.bordered-card { border: 1px solid var(--border); padding: 1rem; }
+.italic { font-style: italic; }
+
+/* Utility classes */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.ml-2 { margin-left: 1rem; }
+
+.flex { display: flex; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+
+.text-sm { font-size: 0.85rem; }
+.text-muted { color: var(--text); }
+.text-accent { color: var(--accent); }
+.text-warning { color: #e67e22; }
+.font-mono { font-family: var(--mono); }
+.w-60 { width: 60px; }
+.bordered-card { border: 1px solid var(--border); padding: 1rem; }
+.italic { font-style: italic; }
+
+/* Utility classes */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.ml-2 { margin-left: 1rem; }
+
+.flex { display: flex; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+
+.text-sm { font-size: 0.85rem; }
+.text-muted { color: var(--text); }
+.text-accent { color: var(--accent); }
+.text-warning { color: #e67e22; }
+.font-mono { font-family: var(--mono); }
+.w-60 { width: 60px; }
+.bordered-card { border: 1px solid var(--border); padding: 1rem; }
+.italic { font-style: italic; }
+
+/* Utility classes */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.ml-2 { margin-left: 1rem; }
+
+.flex { display: flex; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+
+.text-sm { font-size: 0.85rem; }
+.text-muted { color: var(--text); }
+.text-accent { color: var(--accent); }
+.text-warning { color: #e67e22; }
+.font-mono { font-family: var(--mono); }
+.w-60 { width: 60px; }
+.bordered-card { border: 1px solid var(--border); padding: 1rem; }
+.italic { font-style: italic; }
