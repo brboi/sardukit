@@ -1,13 +1,13 @@
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from './utils/config.js';
+import { getDb } from './utils/db.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const JWT_EXPIRY = '24h';
 
-import { getDb } from './utils/db.js';
-
-import { getDb } from './utils/db.js';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const JWT_EXPIRY = '24h';
 
 async function getWhitelist() {
   const envEmails = process.env.ALLOWED_EMAILS;
