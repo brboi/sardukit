@@ -1,18 +1,18 @@
 <template>
   <div>
-    <h2>Rules Manager</h2>
+    <h2>Gestionnaire de règles</h2>
 
-    <div v-if="loading">Loading rules...</div>
+    <div v-if="loading">Chargement des règles...</div>
 
     <template v-else>
       <table>
         <thead>
           <tr>
-            <th>Priority</th>
-            <th>Pattern</th>
-            <th>Match Type</th>
-            <th>Category</th>
-            <th>Sub-Category</th>
+            <th>Priorité</th>
+            <th>Motif</th>
+            <th>Type de correspondance</th>
+            <th>Catégorie</th>
+            <th>Sous-catégorie</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -24,9 +24,9 @@
             <td><input type="text" v-model="rule.pattern" /></td>
             <td>
               <select v-model="rule.match_type">
-                <option value="contains">Contains</option>
-                <option value="starts_with">Starts With</option>
-                <option value="ends_with">Ends With</option>
+                <option value="contains">Contient</option>
+                <option value="starts_with">Commence par</option>
+                <option value="ends_with">Finit par</option>
                 <option value="regex">Regex</option>
                 <option value="exact">Exact</option>
               </select>
@@ -34,83 +34,101 @@
             <td><input type="text" v-model="rule.category" /></td>
             <td><input type="text" v-model="rule.sub_category" /></td>
             <td>
-              <button @click="moveRule(idx, -1)" :disabled="idx === 0" title="Move Up">↑</button>
-              <button @click="moveRule(idx, 1)" :disabled="idx === rules.length - 1" title="Move Down">↓</button>
-              <button @click="deleteRule(idx)" title="Delete">✕</button>
+              <button @click="moveRule(idx, -1)" :disabled="idx === 0" title="Monter">↑</button>
+              <button @click="moveRule(idx, 1)" :disabled="idx === rules.length - 1" title="Descendre">↓</button>
+              <button @click="deleteRule(idx)" title="Supprimer">✕</button>
             </td>
           </tr>
         </tbody>
       </table>
 
       <div class="grid" style="margin-top: 1rem">
-        <h3>Add Rule</h3>
-        <input type="text" v-model="newRule.pattern" placeholder="Pattern" />
+        <h3>Ajouter une règle</h3>
+        <input type="text" v-model="newRule.pattern" placeholder="Motif" />
         <select v-model="newRule.match_type">
-          <option value="contains">Contains</option>
-          <option value="starts_with">Starts With</option>
-          <option value="ends_with">Ends With</option>
+          <option value="contains">Contient</option>
+          <option value="starts_with">Commence par</option>
+          <option value="ends_with">Finit par</option>
           <option value="regex">Regex</option>
           <option value="exact">Exact</option>
         </select>
-        <input type="text" v-model="newRule.category" placeholder="Category" />
-        <input type="text" v-model="newRule.sub_category" placeholder="Sub-Category (optional)" />
-        <button @click="addRule">Add</button>
+        <input type="text" v-model="newRule.category" placeholder="Catégorie" />
+        <input type="text" v-model="newRule.sub_category" placeholder="Sous-catégorie (optionnel)" />
+        <button @click="addRule">Ajouter</button>
       </div>
 
       <button @click="saveRules" :disabled="saving" style="margin-top: 1rem">
-        {{ saving ? 'Saving...' : 'Save All Rules' }}
+        {{ saving ? 'Sauvegarde...' : 'Sauvegarder toutes les règles' }}
       </button>
 
       <details style="margin-top: 2rem">
-        <summary><strong>Suggest Rule with Gemini AI</strong></summary>
+        <summary><strong>Suggérer une règle avec l'IA Gemini</strong></summary>
         <div class="grid" style="margin-top: 1rem">
-          <h4>Paste Transaction Descriptions</h4>
+          <h4>Coller les descriptions de transactions</h4>
           <textarea
             v-model="geminiDescriptions"
-            placeholder="One description per line"
+            placeholder="Une description par ligne"
             rows="5"
           ></textarea>
           <button @click="suggestRule" :disabled="geminiLoading">
-            {{ geminiLoading ? 'Analyzing...' : 'Suggest a Rule' }}
+            {{ geminiLoading ? 'Analyse en cours...' : 'Suggérer une règle' }}
           </button>
         </div>
 
         <div v-if="geminiSuggestion" style="margin-top: 1rem; border: 1px solid var(--border); padding: 1rem">
-          <h4>Proposed Rule</h4>
+          <h4>Règle proposée</h4>
           <p v-if="geminiSuggestion.explanation" style="font-style: italic; color: var(--text)">
             {{ geminiSuggestion.explanation }}
           </p>
-          <label>Pattern <input type="text" v-model="geminiSuggestion.pattern" /></label>
-          <label>Match Type
+          <label>Motif <input type="text" v-model="geminiSuggestion.pattern" /></label>
+          <label>Type de correspondance
             <select v-model="geminiSuggestion.match_type">
-              <option value="contains">Contains</option>
-              <option value="starts_with">Starts With</option>
-              <option value="ends_with">Ends With</option>
+              <option value="contains">Contient</option>
+              <option value="starts_with">Commence par</option>
+              <option value="ends_with">Finit par</option>
               <option value="regex">Regex</option>
               <option value="exact">Exact</option>
             </select>
           </label>
-          <label>Category <input type="text" v-model="geminiSuggestion.category" /></label>
-          <label>Sub-Category <input type="text" v-model="geminiSuggestion.sub_category" /></label>
-          <button @click="addGeminiRule">Add This Rule</button>
-          <button @click="geminiSuggestion = null">Dismiss</button>
+          <label>Catégorie <input type="text" v-model="geminiSuggestion.category" /></label>
+          <label>Sous-catégorie <input type="text" v-model="geminiSuggestion.sub_category" /></label>
+          <button @click="addGeminiRule">Ajouter cette règle</button>
+          <button @click="geminiSuggestion = null">Ignorer</button>
         </div>
       </details>
 
       <details style="margin-top: 2rem">
-        <summary><strong>AI Prompt Template</strong></summary>
+        <summary><strong>Template de prompt IA (règles)</strong></summary>
         <div class="grid" style="margin-top: 1rem">
           <textarea
             v-model="promptTemplate"
-            placeholder="Mustache template for AI prompt"
+            placeholder="Template Mustache pour le prompt IA"
             rows="12"
             style="font-family: monospace; font-size: 0.85rem"
           ></textarea>
           <div>
             <button @click="saveTemplate" :disabled="templateSaving">
-              {{ templateSaving ? 'Saving...' : 'Save Template' }}
+              {{ templateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
             </button>
-            <button @click="resetTemplate">Reset to Default</button>
+            <button @click="resetTemplate">Réinitialiser par défaut</button>
+          </div>
+        </div>
+      </details>
+
+      <details style="margin-top: 2rem">
+        <summary><strong>Template de prompt IA (mapping colonnes)</strong></summary>
+        <div class="grid" style="margin-top: 1rem">
+          <textarea
+            v-model="columnMappingTemplate"
+            placeholder="Template Mustache pour le prompt de mapping de colonnes"
+            rows="12"
+            style="font-family: monospace; font-size: 0.85rem"
+          ></textarea>
+          <div>
+            <button @click="saveColumnMappingTemplate" :disabled="columnMappingTemplateSaving">
+              {{ columnMappingTemplateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
+            </button>
+            <button @click="resetColumnMappingTemplate">Réinitialiser par défaut</button>
           </div>
         </div>
       </details>
@@ -140,31 +158,29 @@ const TEMPLATE_KEY = 'gemini_prompt_template'
 const promptTemplate = ref('')
 const templateSaving = ref(false)
 
-const DEFAULT_TEMPLATE = `Given these bank transaction descriptions:
-{{#context.transactions}}
-{{.}}
-{{/context.transactions}}
+const COLUMN_MAPPING_TEMPLATE_KEY = 'column_mapping_prompt_template'
+const columnMappingTemplate = ref('')
+const columnMappingTemplateSaving = ref(false)
 
-And these existing categories: {{#context.categories}}{{.}}, {{/context.categories}}
-
-And these existing tags: {{#context.tags}}{{.}}, {{/context.tags}}
-
-Suggest ONE rule that would cover the most transactions. Return ONLY valid JSON with this exact structure:
-{
-  "pattern": "the regex or text pattern to match",
-  "match_type": "contains",
-  "category": "suggested category name",
-  "sub_category": null,
-  "tags": [],
-  "explanation": "brief explanation of why this rule makes sense"
-}
-
-Do not include any text before or after the JSON.`
+const defaults = ref({})
 
 onMounted(async () => {
+  await loadDefaults()
   await loadRules()
   await loadTemplate()
+  await loadColumnMappingTemplate()
 })
+
+async function loadDefaults() {
+  try {
+    const res = await apiFetch('/api/settings?key=defaults')
+    if (res.ok) {
+      defaults.value = await res.json()
+    }
+  } catch {
+    // Defaults not available, will use fallbacks
+  }
+}
 
 async function loadRules() {
   loading.value = true
@@ -220,12 +236,12 @@ async function saveRules() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      alert('Rules saved')
+      alert('Règles sauvegardées')
     }
   } catch (e) {
-    alert('Network error: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     saving.value = false
   }
@@ -245,12 +261,12 @@ async function suggestRule() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       geminiSuggestion.value = await res.json()
     }
   } catch (e) {
-    alert('Network error: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     geminiLoading.value = false
   }
@@ -277,12 +293,12 @@ async function loadTemplate() {
     const res = await apiFetch(`/api/settings?key=${TEMPLATE_KEY}`)
     if (res.ok) {
       const data = await res.json()
-      promptTemplate.value = data.value || DEFAULT_TEMPLATE
+      promptTemplate.value = data.value || defaults.value.gemini_prompt_template || ''
     } else {
-      promptTemplate.value = DEFAULT_TEMPLATE
+      promptTemplate.value = defaults.value.gemini_prompt_template || ''
     }
   } catch {
-    promptTemplate.value = DEFAULT_TEMPLATE
+    promptTemplate.value = defaults.value.gemini_prompt_template || ''
   }
 }
 
@@ -295,18 +311,56 @@ async function saveTemplate() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Error: ' + (err.error || 'Unknown error'))
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      alert('Template saved')
+      alert('Template sauvegardé')
     }
   } catch (e) {
-    alert('Network error: ' + e.message)
+    alert('Erreur réseau: ' + e.message)
   } finally {
     templateSaving.value = false
   }
 }
 
 function resetTemplate() {
-  promptTemplate.value = DEFAULT_TEMPLATE
+  promptTemplate.value = defaults.value.gemini_prompt_template || ''
+}
+
+async function loadColumnMappingTemplate() {
+  try {
+    const res = await apiFetch(`/api/settings?key=${COLUMN_MAPPING_TEMPLATE_KEY}`)
+    if (res.ok) {
+      const data = await res.json()
+      columnMappingTemplate.value = data.value || defaults.value.column_mapping_prompt_template || ''
+    } else {
+      columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
+    }
+  } catch {
+    columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
+  }
+}
+
+async function saveColumnMappingTemplate() {
+  columnMappingTemplateSaving.value = true
+  try {
+    const res = await apiFetch('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ key: COLUMN_MAPPING_TEMPLATE_KEY, value: columnMappingTemplate.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+    } else {
+      alert('Template sauvegardé')
+    }
+  } catch (e) {
+    alert('Erreur réseau: ' + e.message)
+  } finally {
+    columnMappingTemplateSaving.value = false
+  }
+}
+
+function resetColumnMappingTemplate() {
+  columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
 }
 </script>
