@@ -49,13 +49,8 @@ onMounted(async () => {
   const token = getAuthToken()
   if (token) {
     try {
-      const res = await apiFetch('/api/health')
-      if (res.ok) {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        email.value = payload.email
-      } else {
-        localStorage.removeItem('auth_token')
-      }
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      email.value = payload.email
     } catch {
       localStorage.removeItem('auth_token')
     }
