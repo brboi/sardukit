@@ -2,6 +2,10 @@
   <div>
     <h2>Gestionnaire de règles</h2>
 
+    <p v-if="defaultsError" class="text-warning mb-2">
+      Impossible de charger les valeurs par défaut. Les templates vides resteront vides.
+    </p>
+
     <div v-if="loading">Chargement des règles...</div>
 
     <template v-else>
@@ -97,16 +101,41 @@
         </div>
       </details>
 
-      <TemplateEditor
-        title="Template de prompt IA (règles)"
-        storage-key="gemini_prompt_template"
-        :default-value="defaults.gemini_prompt_template"
-      />
-      <TemplateEditor
-        title="Template de prompt IA (mapping colonnes)"
-        storage-key="column_mapping_prompt_template"
-        :default-value="defaults.column_mapping_prompt_template"
-      />
+      <details style="margin-top: 2rem">
+        <summary><strong>Template de prompt IA (règles)</strong></summary>
+        <div class="grid" style="margin-top: 1rem">
+          <textarea
+            v-model="promptTemplate"
+            placeholder="Template Mustache pour le prompt IA"
+            rows="12"
+            style="font-family: monospace; font-size: 0.85rem"
+          ></textarea>
+          <div>
+            <button @click="saveTemplate" :disabled="templateSaving">
+              {{ templateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
+            </button>
+            <button @click="resetTemplate">Réinitialiser par défaut</button>
+          </div>
+        </div>
+      </details>
+
+      <details style="margin-top: 2rem">
+        <summary><strong>Template de prompt IA (mapping colonnes)</strong></summary>
+        <div class="grid" style="margin-top: 1rem">
+          <textarea
+            v-model="columnMappingTemplate"
+            placeholder="Template Mustache pour le prompt de mapping de colonnes"
+            rows="12"
+            style="font-family: monospace; font-size: 0.85rem"
+          ></textarea>
+          <div>
+            <button @click="saveColumnMappingTemplate" :disabled="columnMappingTemplateSaving">
+              {{ columnMappingTemplateSaving ? 'Sauvegarde...' : 'Sauvegarder le template' }}
+            </button>
+            <button @click="resetColumnMappingTemplate">Réinitialiser par défaut</button>
+          </div>
+        </div>
+      </details>
     </template>
   </div>
 </template>
@@ -114,7 +143,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
-import TemplateEditor from './TemplateEditor.vue'
+import { showError, showSuccess } from '../composables/useModal.js'
 
 const RULES_KEY = 'categorization_rules'
 const rules = ref([])
@@ -130,11 +159,22 @@ const geminiDescriptions = ref('')
 const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
 
+const TEMPLATE_KEY = 'gemini_prompt_template'
+const promptTemplate = ref('')
+const templateSaving = ref(false)
+
+const COLUMN_MAPPING_TEMPLATE_KEY = 'column_mapping_prompt_template'
+const columnMappingTemplate = ref('')
+const columnMappingTemplateSaving = ref(false)
+
 const defaults = ref({})
+const defaultsError = ref(false)
 
 onMounted(async () => {
   await loadDefaults()
   await loadRules()
+  await loadTemplate()
+  await loadColumnMappingTemplate()
 })
 
 async function loadDefaults() {
@@ -142,9 +182,12 @@ async function loadDefaults() {
     const res = await apiFetch('/api/settings?key=defaults')
     if (res.ok) {
       defaults.value = await res.json()
+      defaultsError.value = false
+    } else {
+      defaultsError.value = true
     }
   } catch {
-    // Defaults not available, will use fallbacks
+    defaultsError.value = true
   }
 }
 
@@ -202,12 +245,12 @@ async function saveRules() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
-      alert('Règles sauvegardées')
+      showSuccess('Règles sauvegardées')
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     saving.value = false
   }
@@ -227,12 +270,12 @@ async function suggestRule() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       geminiSuggestion.value = await res.json()
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     geminiLoading.value = false
   }
@@ -252,5 +295,81 @@ function addGeminiRule() {
   })
   geminiSuggestion.value = null
   geminiDescriptions.value = ''
+}
+
+async function loadTemplate() {
+  try {
+    const res = await apiFetch(`/api/settings?key=${TEMPLATE_KEY}`)
+    if (res.ok) {
+      const data = await res.json()
+      promptTemplate.value = data.value || defaults.value.gemini_prompt_template || ''
+    } else {
+      promptTemplate.value = defaults.value.gemini_prompt_template || ''
+    }
+  } catch {
+    promptTemplate.value = defaults.value.gemini_prompt_template || ''
+  }
+}
+
+async function saveTemplate() {
+  templateSaving.value = true
+  try {
+    const res = await apiFetch('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ key: TEMPLATE_KEY, value: promptTemplate.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
+    } else {
+      showSuccess('Template sauvegardé')
+    }
+  } catch (e) {
+    showError('Erreur réseau: ' + e.message)
+  } finally {
+    templateSaving.value = false
+  }
+}
+
+function resetTemplate() {
+  promptTemplate.value = defaults.value.gemini_prompt_template || ''
+}
+
+async function loadColumnMappingTemplate() {
+  try {
+    const res = await apiFetch(`/api/settings?key=${COLUMN_MAPPING_TEMPLATE_KEY}`)
+    if (res.ok) {
+      const data = await res.json()
+      columnMappingTemplate.value = data.value || defaults.value.column_mapping_prompt_template || ''
+    } else {
+      columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
+    }
+  } catch {
+    columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
+  }
+}
+
+async function saveColumnMappingTemplate() {
+  columnMappingTemplateSaving.value = true
+  try {
+    const res = await apiFetch('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ key: COLUMN_MAPPING_TEMPLATE_KEY, value: columnMappingTemplate.value }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
+    } else {
+      showSuccess('Template sauvegardé')
+    }
+  } catch (e) {
+    showError('Erreur réseau: ' + e.message)
+  } finally {
+    columnMappingTemplateSaving.value = false
+  }
+}
+
+function resetColumnMappingTemplate() {
+  columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
 }
 </script>

@@ -191,18 +191,13 @@ function reparse() {
   parsedRows.value = result.rows
 
   const autoMapping = detectColumns(result.headers)
-  const existingMapping = { ...columnMapping.value }
-
   columnMapping.value = {}
   result.headers.forEach((h, idx) => {
-    if (existingMapping[h]) {
-      columnMapping.value[h] = existingMapping[h]
-    } else {
-      const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
-      columnMapping.value[h] = dbCol || ''
-    }
+    const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
+    columnMapping.value[h] = dbCol || ''
   })
 
+  // Auto-update preview
   updatePreview()
 }
 
