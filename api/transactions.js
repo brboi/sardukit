@@ -2,8 +2,6 @@ import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
 import { normalizeDate, parseAmount, isValidTransactionRow } from '../shared/parsers.js';
 
-const DATE_FIELDS = ['execution_date', 'accounting_date', 'value_date'];
-
 async function handler(req, res) {
   const sql = getDb();
 
@@ -37,14 +35,11 @@ async function handler(req, res) {
     }
 
     try {
-      let saved = 0;
-      for (const t of transactions) {
-        const seqNum = t.sequence_number || null;
-        if (!seqNum) continue;
-
-        const row = {
+      const validRows = transactions
+        .filter(t => t.sequence_number)
+        .map(t => ({
           bank_source,
-          sequence_number: seqNum,
+          sequence_number: t.sequence_number,
           extract_number: t.extract_number || null,
           account_number: t.account_number || null,
           execution_date: normalizeDate(t.execution_date),
@@ -63,29 +58,38 @@ async function handler(req, res) {
           rejection_reason: t.rejection_reason || null,
           bic: t.bic || null,
           country_code: t.country_code || null,
-          raw_data: t,
-        };
+          raw_data: JSON.stringify(t),
+        }))
+        .filter(isValidTransactionRow);
 
-        if (!isValidTransactionRow(row)) continue;
+      if (validRows.length === 0) {
+        return res.status(200).json({ saved: 0 });
+      }
 
-        const result = await sql`
-          INSERT INTO transactions (
-            bank_source, sequence_number, extract_number, account_number,
-            execution_date, accounting_date, value_date, amount, currency,
-            transaction_type, counterparty_account, counterparty_name,
-            counterparty_street, counterparty_city, communication, details,
-            status, rejection_reason, bic, country_code, raw_data
-          ) VALUES (
-            ${row.bank_source}, ${row.sequence_number}, ${row.extract_number}, ${row.account_number},
-            ${row.execution_date}, ${row.accounting_date}, ${row.value_date}, ${row.amount}, ${row.currency},
-            ${row.transaction_type}, ${row.counterparty_account}, ${row.counterparty_name},
-            ${row.counterparty_street}, ${row.counterparty_city}, ${row.communication}, ${row.details},
-            ${row.status}, ${row.rejection_reason}, ${row.bic}, ${row.country_code}, ${JSON.stringify(row.raw_data)}
-          )
-          ON CONFLICT (bank_source, sequence_number) DO NOTHING
-          RETURNING id
-        `;
-        if (result.length > 0) saved++;
+      const batchSize = 50;
+      let saved = 0;
+      for (let i = 0; i < validRows.length; i += batchSize) {
+        const batch = validRows.slice(i, i + batchSize);
+        const results = await Promise.all(
+          batch.map(r => sql`
+            INSERT INTO transactions (
+              bank_source, sequence_number, extract_number, account_number,
+              execution_date, accounting_date, value_date, amount, currency,
+              transaction_type, counterparty_account, counterparty_name,
+              counterparty_street, counterparty_city, communication, details,
+              status, rejection_reason, bic, country_code, raw_data
+            ) VALUES (
+              ${r.bank_source}, ${r.sequence_number}, ${r.extract_number}, ${r.account_number},
+              ${r.execution_date}, ${r.accounting_date}, ${r.value_date}, ${r.amount}, ${r.currency},
+              ${r.transaction_type}, ${r.counterparty_account}, ${r.counterparty_name},
+              ${r.counterparty_street}, ${r.counterparty_city}, ${r.communication}, ${r.details},
+              ${r.status}, ${r.rejection_reason}, ${r.bic}, ${r.country_code}, ${r.raw_data}
+            )
+            ON CONFLICT (bank_source, sequence_number) DO NOTHING
+            RETURNING id
+          `)
+        );
+        saved += results.filter(r => r.length > 0).length;
       }
 
       return res.status(200).json({ saved });
