@@ -6,18 +6,17 @@
       <h3>Create New Report</h3>
       <div class="grid">
         <label>Name <input type="text" v-model="form.name" placeholder="Report name" /></label>
-        <label>Start Date <input type="date" v-model="form.start_date" /></label>
-        <label>End Date <input type="date" v-model="form.end_date" /></label>
+        <label>Year <input type="number" v-model.number="form.year" min="2000" max="2099" placeholder="2025" /></label>
         <label>Initial Balance <input type="number" step="0.01" v-model.number="form.initial_balance" /></label>
       </div>
-      <button @click="createReport" :disabled="creating">
+      <button @click="createReport" :disabled="creating || !form.year">
         {{ creating ? 'Creating...' : 'Create Report' }}
       </button>
     </div>
 
     <template v-else>
       <h3>{{ currentReport.name }}</h3>
-      <p>Period: {{ currentReport.start_date }} to {{ currentReport.end_date }}</p>
+      <p>Year: {{ currentReport.year }}</p>
 
       <div class="grid">
         <button @click="generateReport" :disabled="generating">
@@ -78,8 +77,7 @@ const breakdown = ref([])
 
 const form = ref({
   name: '',
-  start_date: '',
-  end_date: '',
+  year: new Date().getFullYear(),
   initial_balance: 0,
 })
 
@@ -99,7 +97,7 @@ function formatCurrency(val) {
 }
 
 async function createReport() {
-  if (!form.value.start_date || !form.value.end_date) return
+  if (!form.value.year) return
   creating.value = true
   try {
     const res = await apiFetch('/api/reports', {
