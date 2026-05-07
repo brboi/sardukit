@@ -1,7 +1,7 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
 import { renderPrompt } from './utils/template.js';
-import { RuleSuggestionJsonSchema } from './schemas/rule-suggestion.js';
+import { RuleSuggestionSchema, RuleSuggestionJsonSchema } from './schemas/rule-suggestion.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -55,10 +55,13 @@ async function handler(req, res) {
     const prompt = renderPrompt(template, context);
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -78,10 +81,10 @@ async function handler(req, res) {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     try {
-      const rule = JSON.parse(text);
+      const rule = RuleSuggestionSchema.parse(JSON.parse(text));
       return res.status(200).json(rule);
-    } catch {
-      return res.status(500).json({ error: 'Failed to parse response as JSON', raw: text });
+    } catch (err) {
+      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: text });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });

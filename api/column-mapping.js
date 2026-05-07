@@ -1,7 +1,7 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
 import { renderColumnMappingPrompt } from './utils/template.js';
-import { ColumnMappingJsonSchema } from './schemas/column-mapping.js';
+import { ColumnMappingSchema, ColumnMappingJsonSchema } from './schemas/column-mapping.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -34,10 +34,13 @@ async function handler(req, res) {
     const prompt = renderColumnMappingPrompt(template, headers);
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -57,10 +60,10 @@ async function handler(req, res) {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     try {
-      const result = JSON.parse(text);
+      const result = ColumnMappingSchema.parse(JSON.parse(text));
       return res.status(200).json(result);
-    } catch {
-      return res.status(500).json({ error: 'Failed to parse response as JSON', raw: text });
+    } catch (err) {
+      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: text });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });

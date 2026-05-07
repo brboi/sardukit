@@ -1,4 +1,7 @@
 import Papa from 'papaparse';
+import { normalizeDate, parseAmount, isValidTransactionRow } from '../../shared/parsers.js';
+
+export { normalizeDate, parseAmount };
 
 const COLUMN_MAP = {
   // BNP
@@ -43,13 +46,14 @@ export function detectColumns(headers) {
   return mapping;
 }
 
-export function parseCSV(text, skipLines = 0) {
+export function parseCSV(text, skipLines = 0, skipFooter = 0) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (skipLines >= lines.length) {
+  const totalSkip = skipLines + skipFooter;
+  if (totalSkip >= lines.length) {
     return { headers: [], rows: [], rawText: text };
   }
 
-  const dataLines = lines.slice(skipLines);
+  const dataLines = lines.slice(skipLines, skipFooter > 0 ? -skipFooter : undefined);
   const result = Papa.parse(dataLines.join('\n'), {
     header: false,
     skipEmptyLines: true,
@@ -62,23 +66,28 @@ export function parseCSV(text, skipLines = 0) {
   };
 }
 
-export function normalizeDate(val) {
-  if (!val) return '';
-  val = String(val).trim();
-  const m = val.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-  if (m) {
-    let [, d, mo, y] = m;
-    if (y.length === 2) y = `20${y}`;
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
-  }
-  return val;
-}
+export function detectFooterLines(text, skipLines = 0) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (skipLines >= lines.length) return 0;
 
-export function parseAmount(val) {
-  if (!val) return 0;
-  val = String(val).trim().replace(/\s/g, '').replace(',', '.');
-  const n = parseFloat(val);
-  return isNaN(n) ? 0 : n;
+  const dataLines = lines.slice(skipLines);
+  const result = Papa.parse(dataLines.join('\n'), {
+    header: false,
+    skipEmptyLines: true,
+  });
+
+  let footerCount = 0;
+  for (let i = result.data.length - 1; i >= 0; i--) {
+    const row = result.data[i];
+    const hasValidDate = row.some(cell => /\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/.test(String(cell)));
+    const hasSequenceLike = row.some(cell => /^[\dA-Z]{4,}$/.test(String(cell).trim()));
+    if (!hasValidDate && !hasSequenceLike) {
+      footerCount++;
+    } else {
+      break;
+    }
+  }
+  return footerCount;
 }
 
 export function mapRows(rows, columnMapping) {
@@ -98,5 +107,5 @@ export function mapRows(rows, columnMapping) {
       }
       return mapped;
     })
-    .filter(r => r.amount !== 0 || r.execution_date || r.accounting_date || r.value_date);
+    .filter(isValidTransactionRow);
 }

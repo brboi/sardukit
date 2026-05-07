@@ -26,6 +26,16 @@
       </label>
 
       <label>
+        Lignes de footer à ignorer
+        <input type="number" v-model.number="skipFooter" min="0" max="20" />
+      </label>
+
+      <label>
+        Lignes de footer à ignorer
+        <input type="number" v-model.number="skipFooter" min="0" max="20" />
+      </label>
+
+      <label>
         Fichier CSV
         <input type="file" accept=".csv" @change="onFileSelect" />
       </label>
@@ -98,7 +108,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
-import { parseCSV, detectColumns, mapRows } from '../services/csvParser.js'
+import { parseCSV, detectColumns, mapRows, detectFooterLines } from '../services/csvParser.js'
 import { showError, showSuccess } from '../composables/useModal.js'
 
 const COLUMN_LABELS = {
@@ -126,6 +136,7 @@ const COLUMN_LABELS = {
 const bankSource = ref('')
 const bankSources = ref([])
 const skipLines = ref(0)
+const skipFooter = ref(0)
 const parsedHeaders = ref([])
 const parsedRows = ref([])
 const rawText = ref('')
@@ -191,7 +202,7 @@ function onFileSelect(event) {
 }
 
 function reparse() {
-  const result = parseCSV(rawText.value, skipLines.value)
+  const result = parseCSV(rawText.value, skipLines.value, skipFooter.value)
   parsedHeaders.value = result.headers
   parsedRows.value = result.rows
 
@@ -207,6 +218,15 @@ function reparse() {
       columnMapping.value[h] = dbCol || ''
     }
   })
+
+  if (skipFooter.value === 0) {
+    const detected = detectFooterLines(rawText.value, skipLines.value)
+    if (detected > 0) {
+      skipFooter.value = detected
+      reparse()
+      return
+    }
+  }
 
   updatePreview()
 }
@@ -286,5 +306,6 @@ function reset() {
   columnMapping.value = {}
   aiMatchResult.value = ''
   aiMatching.value = false
+  skipFooter.value = 0
 }
 </script>

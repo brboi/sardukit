@@ -1,27 +1,8 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
+import { normalizeDate, parseAmount, isValidTransactionRow } from '../shared/parsers.js';
 
 const DATE_FIELDS = ['execution_date', 'accounting_date', 'value_date'];
-
-function normalizeDate(val) {
-  if (!val) return null;
-  val = String(val).trim();
-  const m = val.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
-  if (m) {
-    let [, d, mo, y] = m;
-    if (y.length === 2) y = `20${y}`;
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
-  }
-  return val;
-}
-
-function parseAmount(val) {
-  if (!val) return 0;
-  val = String(val).trim();
-  val = val.replace(/\s/g, '').replace(',', '.');
-  const n = parseFloat(val);
-  return isNaN(n) ? 0 : n;
-}
 
 async function handler(req, res) {
   const sql = getDb();
@@ -84,6 +65,10 @@ async function handler(req, res) {
           country_code: t.country_code || null,
           raw_data: t,
         };
+
+        if (!isValidTransactionRow(row)) continue;
+
+        if (!isValidTransactionRow(row)) continue;
 
         await sql`
           INSERT INTO transactions (

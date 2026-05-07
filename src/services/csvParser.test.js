@@ -79,9 +79,9 @@ describe('normalizeDate', () => {
     expect(normalizeDate('1-1-25')).toBe('2025-01-01');
   });
 
-  it('returns empty for null', () => {
-    expect(normalizeDate(null)).toBe('');
-    expect(normalizeDate('')).toBe('');
+  it('returns null for null', () => {
+    expect(normalizeDate(null)).toBe(null);
+    expect(normalizeDate('')).toBe(null);
   });
 });
 

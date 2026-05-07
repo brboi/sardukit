@@ -136,13 +136,16 @@ const geminiDescriptions = ref('')
 const geminiLoading = ref(false)
 const geminiSuggestion = ref(null)
 
-const TEMPLATE_KEY = 'gemini_prompt_template'
-const promptTemplate = ref('')
-const templateSaving = ref(false)
+const defaults = ref({})
+const defaultsError = ref(false)
 
-const COLUMN_MAPPING_TEMPLATE_KEY = 'column_mapping_prompt_template'
-const columnMappingTemplate = ref('')
-const columnMappingTemplateSaving = ref(false)
+onMounted(async () => {
+  await loadDefaults()
+  await loadRules()
+})
+const geminiDescriptions = ref('')
+const geminiLoading = ref(false)
+const geminiSuggestion = ref(null)
 
 const defaults = ref({})
 const defaultsError = ref(false)
@@ -150,8 +153,6 @@ const defaultsError = ref(false)
 onMounted(async () => {
   await loadDefaults()
   await loadRules()
-  await loadTemplate()
-  await loadColumnMappingTemplate()
 })
 
 async function loadDefaults() {
@@ -272,78 +273,6 @@ function addGeminiRule() {
   })
   geminiSuggestion.value = null
   geminiDescriptions.value = ''
-}
-
-async function loadTemplate() {
-  try {
-    const res = await apiFetch(`/api/settings?key=${TEMPLATE_KEY}`)
-    if (res.ok) {
-      const data = await res.json()
-      promptTemplate.value = data.value || defaults.value.gemini_prompt_template || ''
-    } else {
-      promptTemplate.value = defaults.value.gemini_prompt_template || ''
-    }
-  } catch {
-    promptTemplate.value = defaults.value.gemini_prompt_template || ''
-  }
-}
-
-async function saveTemplate() {
-  templateSaving.value = true
-  try {
-    const res = await apiFetch('/api/settings', {
-      method: 'POST',
-      body: JSON.stringify({ key: TEMPLATE_KEY, value: promptTemplate.value }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
-    } else {
-      showSuccess('Template sauvegardé')
-    }
-  } catch (e) {
-    showError('Erreur réseau: ' + e.message)
-  } finally {
-    templateSaving.value = false
-  }
-}
-
-function resetTemplate() {
-  promptTemplate.value = defaults.value.gemini_prompt_template || ''
-}
-
-async function loadColumnMappingTemplate() {
-  try {
-    const res = await apiFetch(`/api/settings?key=${COLUMN_MAPPING_TEMPLATE_KEY}`)
-    if (res.ok) {
-      const data = await res.json()
-      columnMappingTemplate.value = data.value || defaults.value.column_mapping_prompt_template || ''
-    } else {
-      columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
-    }
-  } catch {
-    columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
-  }
-}
-
-async function saveColumnMappingTemplate() {
-  columnMappingTemplateSaving.value = true
-  try {
-    const res = await apiFetch('/api/settings', {
-      method: 'POST',
-      body: JSON.stringify({ key: COLUMN_MAPPING_TEMPLATE_KEY, value: columnMappingTemplate.value }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
-    } else {
-      showSuccess('Template sauvegardé')
-    }
-  } catch (e) {
-    showError('Erreur réseau: ' + e.message)
-  } finally {
-    columnMappingTemplateSaving.value = false
-  }
 }
 
 function resetColumnMappingTemplate() {
