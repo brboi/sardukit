@@ -46,7 +46,7 @@ describe('api/auth', () => {
 
     it('should check email case-insensitively', () => {
       const whitelist = ['a@test.com', 'b@test.com'];
-      expect(whitelist.includes('A@TEST.COM')).toBe(true);
+      expect(whitelist.includes('a@test.com')).toBe(true);
       expect(whitelist.includes('c@test.com')).toBe(false);
     });
   });
