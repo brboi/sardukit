@@ -4,6 +4,14 @@ import { getDb } from './utils/db.js';
 async function handler(req, res) {
   const sql = getDb();
 
+  if (req.method === 'GET' && req.query?.key === 'defaults') {
+    const { DEFAULT_PROMPT_TEMPLATE, DEFAULT_COLUMN_MAPPING_PROMPT } = await import('./utils/template.js');
+    return res.status(200).json({
+      gemini_prompt_template: DEFAULT_PROMPT_TEMPLATE,
+      column_mapping_prompt_template: DEFAULT_COLUMN_MAPPING_PROMPT,
+    });
+  }
+
   if (req.method === 'GET') {
     const { key } = req.query || {};
     try {
