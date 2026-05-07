@@ -102,6 +102,29 @@ import { parseCSV, detectColumns, mapRows, detectFooterLines } from '../services
 import { showError, showSuccess } from '../composables/useModal.js'
 import { COLUMN_LABELS } from '../services/columnLabels.js'
 
+const bankSources = ref([])
+const sourcesError = ref(false)
+const bankSource = ref('')
+const skipLines = ref(0)
+const skipFooter = ref(0)
+const rawText = ref('')
+const parsedHeaders = ref([])
+const parsedRows = ref([])
+const columnMapping = ref({})
+const preview = ref([])
+const previewColumns = computed(() => {
+  const cols = new Set()
+  preview.value.forEach(row => Object.keys(row).forEach(k => cols.add(k)))
+  return [...cols]
+})
+const saving = ref(false)
+const aiMatching = ref(false)
+const aiMatchResult = ref('')
+
+function colLabel(col) {
+  return COLUMN_LABELS[col] || col
+}
+
 onMounted(async () => {
   try {
     const res = await apiFetch('/api/transactions?sources_only=1')

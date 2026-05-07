@@ -27,8 +27,7 @@ async function handler(req, res) {
 
     let tags = [];
     try {
-      const rulesValue = await getSetting(sql, 'categorization_rules', []);
-      const rules = typeof rulesValue === 'string' ? JSON.parse(rulesValue) : rulesValue;
+      const rules = await getSetting(sql, 'categorization_rules', []);
       if (Array.isArray(rules)) {
         tags = [...new Set(rules.flatMap(r => r.tags || []))];
       }

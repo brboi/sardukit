@@ -11,6 +11,28 @@ async function handler(req, res) {
     return res.status(400).json({ error: 'Missing report id' });
   }
 
+  if (req.method === 'GET') {
+    try {
+      const report = await sql`SELECT * FROM reports WHERE id = ${reportId} LIMIT 1`;
+      if (report.length === 0) {
+        return res.status(404).json({ error: 'Report not found' });
+      }
+
+      const breakdown = await sql`
+        SELECT category, sub_category, COUNT(*) as count, SUM(t.amount) as total
+        FROM report_transactions rt
+        JOIN transactions t ON t.id = rt.transaction_id
+        WHERE rt.report_id = ${reportId}
+        GROUP BY category, sub_category
+        ORDER BY total DESC
+      `;
+
+      return res.status(200).json({ report: report[0], breakdown });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (req.method === 'POST') {
     try {
       const report = await sql`SELECT * FROM reports WHERE id = ${reportId} LIMIT 1`;
@@ -30,35 +52,49 @@ async function handler(req, res) {
         ORDER BY COALESCE(execution_date, accounting_date, value_date)
       `;
 
-      const rulesValue = await getSetting(sql, 'categorization_rules', []);
-      const rules = typeof rulesValue === 'string' ? JSON.parse(rulesValue) : rulesValue;
+      const rules = await getSetting(sql, 'categorization_rules', []);
 
       let totalAmount = 0;
-      const insertQueries = [];
+      const categorized = [];
       for (const t of transactions) {
         const match = applyRules(t, rules);
         const category = match?.category || 'Uncategorized';
         const subCategory = match?.sub_category || null;
         const tags = match?.tags || [];
-
-        insertQueries.push(sql`
-          INSERT INTO report_transactions (report_id, transaction_id, category, sub_category, tags)
-          VALUES (${reportId}, ${t.id}, ${category}, ${subCategory}, ${JSON.stringify(tags)})
-        `);
+        categorized.push({ transaction_id: t.id, category, sub_category: subCategory, tags });
         totalAmount += parseFloat(t.amount) || 0;
       }
 
       const finalBalance = parseFloat(report[0].initial_balance) + totalAmount;
 
-      const allQueries = [
-        sql`DELETE FROM report_transactions WHERE report_id = ${reportId}`,
-        ...insertQueries,
-        sql`UPDATE reports SET final_balance = ${finalBalance} WHERE id = ${reportId}`,
-      ];
+      await sql`DELETE FROM report_transactions WHERE report_id = ${reportId}`;
 
-      await sql.transaction(allQueries);
-      const report = await sql`SELECT * FROM reports WHERE id = ${reportId} LIMIT 1`;
-      return res.status(200).json({ report: report[0], breakdown: rows });
+      for (const c of categorized) {
+        await sql`
+          INSERT INTO report_transactions (report_id, transaction_id, category, sub_category, tags)
+          VALUES (${reportId}, ${c.transaction_id}, ${c.category}, ${c.sub_category}, ${JSON.stringify(c.tags)})
+        `;
+      }
+
+      await sql`UPDATE reports SET final_balance = ${finalBalance} WHERE id = ${reportId}`;
+
+      const updatedReport = await sql`SELECT * FROM reports WHERE id = ${reportId} LIMIT 1`;
+
+      const breakdown = await sql`
+        SELECT category, sub_category, COUNT(*) as count, SUM(t.amount) as total
+        FROM report_transactions rt
+        JOIN transactions t ON t.id = rt.transaction_id
+        WHERE rt.report_id = ${reportId}
+        GROUP BY category, sub_category
+        ORDER BY total DESC
+      `;
+
+      return res.status(200).json({
+        report: updatedReport[0],
+        breakdown,
+        transactions_processed: transactions.length,
+        final_balance: finalBalance,
+      });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

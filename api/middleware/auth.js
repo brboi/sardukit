@@ -1,29 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../utils/config.js';
+import { getWhitelist } from '../utils/whitelist.js';
 
-const WHITELIST_RECHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-
-async function getWhitelist() {
-  const envEmails = process.env.ALLOWED_EMAILS;
-  if (envEmails) {
-    return envEmails.split(',').map(e => e.trim().toLowerCase());
-  }
-
-  try {
-    const { getDb } = await import('../utils/db.js');
-    const sql = getDb();
-    const rows = await sql`
-      SELECT value FROM settings WHERE key = 'google_oauth_email_whitelist' LIMIT 1
-    `;
-    if (rows.length === 0) return [];
-    const value = rows[0].value;
-    return typeof value === 'string'
-      ? value.split(',').map(e => e.trim().toLowerCase())
-      : [];
-  } catch {
-    return [];
-  }
-}
+const WHITELIST_RECHECK_INTERVAL_MS = 60 * 60 * 1000;
 
 export function withAuth(handler) {
   return async (req, res) => {
@@ -41,7 +20,6 @@ export function withAuth(handler) {
         if (whitelist.length > 0 && !whitelist.includes(payload.email)) {
           return res.status(403).json({ error: 'Email not whitelisted', code: 'WHITELIST_REVOKED' });
         }
-        payload.whitelist_checked_at = Date.now();
       }
 
       req.user = payload;

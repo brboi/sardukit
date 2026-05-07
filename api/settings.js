@@ -18,10 +18,20 @@ async function handler(req, res) {
       if (key) {
         const rows = await sql`SELECT value FROM settings WHERE key = ${key} LIMIT 1`;
         if (rows.length === 0) return res.status(404).json({ error: 'Key not found' });
-        return res.status(200).json({ key, value: rows[0].value });
+        let value = rows[0].value;
+        if (typeof value === 'string') {
+          try { value = JSON.parse(value); } catch { /* keep raw string */ }
+        }
+        return res.status(200).json({ key, value });
       }
       const rows = await sql`SELECT key, value FROM settings ORDER BY key`;
-      return res.status(200).json(rows);
+      return res.status(200).json(rows.map(r => {
+        let value = r.value;
+        if (typeof value === 'string') {
+          try { value = JSON.parse(value); } catch { /* keep raw string */ }
+        }
+        return { key: r.key, value };
+      }));
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
