@@ -2,7 +2,7 @@ export function applyRules(transaction, rules) {
   if (!rules || rules.length === 0) return null;
 
   const sorted = [...rules].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-  const desc = ((transaction.description || transaction.details || '')).toLowerCase();
+  const desc = ((transaction.communication || transaction.description || transaction.details || '')).toLowerCase();
 
   for (const rule of sorted) {
     const pattern = (rule.pattern || '').toLowerCase();

@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     }
 
     const sessionToken = jwt.sign(
-      { email, iat: Math.floor(Date.now() / 1000) },
+      { email, iat: Math.floor(Date.now() / 1000), whitelist_checked_at: Date.now() },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRY }
     );

@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS transactions (
     UNIQUE (bank_source, sequence_number)
 );
 
+CREATE INDEX IF NOT EXISTS idx_transactions_execution_date ON transactions(execution_date);
+CREATE INDEX IF NOT EXISTS idx_transactions_accounting_date ON transactions(accounting_date);
+CREATE INDEX IF NOT EXISTS idx_transactions_value_date ON transactions(value_date);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value JSONB

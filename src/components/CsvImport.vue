@@ -26,16 +26,6 @@
       </label>
 
       <label>
-        Lignes de footer à ignorer
-        <input type="number" v-model.number="skipFooter" min="0" max="20" />
-      </label>
-
-      <label>
-        Lignes de footer à ignorer
-        <input type="number" v-model.number="skipFooter" min="0" max="20" />
-      </label>
-
-      <label>
         Fichier CSV
         <input type="file" accept=".csv" @change="onFileSelect" />
       </label>
@@ -110,51 +100,7 @@ import { ref, watch, computed, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { parseCSV, detectColumns, mapRows, detectFooterLines } from '../services/csvParser.js'
 import { showError, showSuccess } from '../composables/useModal.js'
-
-const COLUMN_LABELS = {
-  sequence_number: 'N° de séquence',
-  extract_number: "N° d'extrait",
-  account_number: 'N° de compte',
-  execution_date: "Date d'exécution",
-  accounting_date: 'Date de comptabilisation',
-  value_date: 'Date valeur',
-  amount: 'Montant',
-  currency: 'Devise',
-  transaction_type: 'Type de transaction',
-  counterparty_account: 'Compte contrepartie',
-  counterparty_name: 'Nom contrepartie',
-  counterparty_street: 'Rue contrepartie',
-  counterparty_city: 'Ville contrepartie',
-  communication: 'Communication',
-  details: 'Détails',
-  status: 'Statut',
-  rejection_reason: 'Motif du refus',
-  bic: 'BIC',
-  country_code: 'Code pays',
-}
-
-const bankSource = ref('')
-const bankSources = ref([])
-const skipLines = ref(0)
-const skipFooter = ref(0)
-const parsedHeaders = ref([])
-const parsedRows = ref([])
-const rawText = ref('')
-const columnMapping = ref({})
-const preview = ref([])
-const saving = ref(false)
-const aiMatching = ref(false)
-const aiMatchResult = ref('')
-const sourcesError = ref(false)
-
-const previewColumns = computed(() => {
-  if (preview.value.length === 0) return []
-  return Object.keys(preview.value[0])
-})
-
-function colLabel(key) {
-  return COLUMN_LABELS[key] || key
-}
+import { COLUMN_LABELS } from '../services/columnLabels.js'
 
 onMounted(async () => {
   try {

@@ -150,8 +150,8 @@ async function loadBreakdown() {
       currentReport.value = data.report
       breakdown.value = data.breakdown
     }
-  } catch {
-    // ignore
+  } catch (e) {
+    console.error('Failed to load breakdown:', e)
   }
 }
 </script>

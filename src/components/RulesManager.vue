@@ -143,17 +143,6 @@ onMounted(async () => {
   await loadDefaults()
   await loadRules()
 })
-const geminiDescriptions = ref('')
-const geminiLoading = ref(false)
-const geminiSuggestion = ref(null)
-
-const defaults = ref({})
-const defaultsError = ref(false)
-
-onMounted(async () => {
-  await loadDefaults()
-  await loadRules()
-})
 
 async function loadDefaults() {
   try {
@@ -273,9 +262,5 @@ function addGeminiRule() {
   })
   geminiSuggestion.value = null
   geminiDescriptions.value = ''
-}
-
-function resetColumnMappingTemplate() {
-  columnMappingTemplate.value = defaults.value.column_mapping_prompt_template || ''
 }
 </script>

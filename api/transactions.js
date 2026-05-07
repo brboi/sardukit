@@ -68,9 +68,7 @@ async function handler(req, res) {
 
         if (!isValidTransactionRow(row)) continue;
 
-        if (!isValidTransactionRow(row)) continue;
-
-        await sql`
+        const result = await sql`
           INSERT INTO transactions (
             bank_source, sequence_number, extract_number, account_number,
             execution_date, accounting_date, value_date, amount, currency,
@@ -85,8 +83,9 @@ async function handler(req, res) {
             ${row.status}, ${row.rejection_reason}, ${row.bic}, ${row.country_code}, ${JSON.stringify(row.raw_data)}
           )
           ON CONFLICT (bank_source, sequence_number) DO NOTHING
+          RETURNING id
         `;
-        saved++;
+        if (result.length > 0) saved++;
       }
 
       return res.status(200).json({ saved });

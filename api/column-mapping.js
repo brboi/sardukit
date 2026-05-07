@@ -1,5 +1,7 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
+import { getSetting } from './utils/settings.js';
+import { callGemini } from './utils/gemini.js';
 import { renderColumnMappingPrompt } from './utils/template.js';
 import { ColumnMappingSchema, ColumnMappingJsonSchema } from './schemas/column-mapping.js';
 
@@ -21,49 +23,16 @@ async function handler(req, res) {
   const sql = getDb();
 
   try {
-    let template = null;
-    try {
-      const rows = await sql`SELECT value FROM settings WHERE key = 'column_mapping_prompt_template' LIMIT 1`;
-      if (rows.length > 0) {
-        template = typeof rows[0].value === 'string' ? rows[0].value : null;
-      }
-    } catch {
-      // Use default template
-    }
-
+    const template = await getSetting(sql, 'column_mapping_prompt_template', null);
     const prompt = renderColumnMappingPrompt(template, headers);
-
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0,
-            response_schema: ColumnMappingJsonSchema,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.json();
-      return res.status(response.status).json({ error: err.error?.message || 'Gemini API error' });
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = await callGemini(apiKey, prompt, ColumnMappingJsonSchema);
 
     try {
       const result = ColumnMappingSchema.parse(JSON.parse(text));
       return res.status(200).json(result);
     } catch (err) {
-      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: text });
+      const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text;
+      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: truncated });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });

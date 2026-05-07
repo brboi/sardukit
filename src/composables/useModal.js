@@ -32,6 +32,7 @@ export function useModal() {
   return { isOpen, message, title, open, close, setEl }
 }
 
-export function showSuccess(msg) { useModal().open(msg, 'success') }
-export function showError(msg) { useModal().open(msg, 'error') }
-export function showWarning(msg) { useModal().open(msg, 'warning') }
+const modal = useModal()
+export function showSuccess(msg) { modal.open(msg, 'success') }
+export function showError(msg) { modal.open(msg, 'error') }
+export function showWarning(msg) { modal.open(msg, 'warning') }

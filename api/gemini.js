@@ -1,5 +1,7 @@
 import { withAuth } from './middleware/auth.js';
 import { getDb } from './utils/db.js';
+import { getSetting } from './utils/settings.js';
+import { callGemini } from './utils/gemini.js';
 import { renderPrompt } from './utils/template.js';
 import { RuleSuggestionSchema, RuleSuggestionJsonSchema } from './schemas/rule-suggestion.js';
 
@@ -21,26 +23,14 @@ async function handler(req, res) {
   const sql = getDb();
 
   try {
-    let template = null;
-    try {
-      const rows = await sql`SELECT value FROM settings WHERE key = 'gemini_prompt_template' LIMIT 1`;
-      if (rows.length > 0) {
-        template = typeof rows[0].value === 'string' ? rows[0].value : null;
-      }
-    } catch {
-      // Use default template
-    }
+    const template = await getSetting(sql, 'gemini_prompt_template', null);
 
     let tags = [];
     try {
-      const settingsRows = await sql`SELECT value FROM settings WHERE key = 'categorization_rules' LIMIT 1`;
-      if (settingsRows.length > 0) {
-        const rules = typeof settingsRows[0].value === 'string'
-          ? JSON.parse(settingsRows[0].value)
-          : settingsRows[0].value;
-        if (Array.isArray(rules)) {
-          tags = [...new Set(rules.flatMap(r => r.tags || []))];
-        }
+      const rulesValue = await getSetting(sql, 'categorization_rules', []);
+      const rules = typeof rulesValue === 'string' ? JSON.parse(rulesValue) : rulesValue;
+      if (Array.isArray(rules)) {
+        tags = [...new Set(rules.flatMap(r => r.tags || []))];
       }
     } catch {
       // No rules yet
@@ -53,38 +43,14 @@ async function handler(req, res) {
     };
 
     const prompt = renderPrompt(template, context);
-
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0,
-            response_schema: RuleSuggestionJsonSchema,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const err = await response.json();
-      return res.status(response.status).json({ error: err.error?.message || 'Gemini API error' });
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = await callGemini(apiKey, prompt, RuleSuggestionJsonSchema);
 
     try {
       const rule = RuleSuggestionSchema.parse(JSON.parse(text));
       return res.status(200).json(rule);
     } catch (err) {
-      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: text });
+      const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text;
+      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: truncated });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });
