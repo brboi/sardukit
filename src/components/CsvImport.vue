@@ -120,6 +120,8 @@
 import { ref, watch, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { parseCSV, detectColumns, mapRows } from '../services/csvParser.js'
+import { showError, showSuccess } from '../composables/useModal.js'
+import { showError, showSuccess } from '../composables/useModal.js'
 
 const bankSource = ref('')
 const bankSources = ref([])
@@ -161,7 +163,7 @@ function onFileSelect(event) {
   const file = event.target.files[0]
   if (!file) return
   if (!file.name.endsWith('.csv')) {
-    alert('Erreur: veuillez sélectionner un fichier CSV')
+    showError('Veuillez sélectionner un fichier CSV')
     event.target.value = ''
     return
   }
@@ -171,7 +173,7 @@ function onFileSelect(event) {
     reparse()
   }
   reader.onerror = () => {
-    alert('Erreur: impossible de lire le fichier')
+    showError('Impossible de lire le fichier')
   }
   reader.readAsText(file)
 }
@@ -248,13 +250,13 @@ async function saveTransactions() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       const data = await res.json()
-      alert(data.saved + ' transaction(s) sauvegardée(s)')
+      showSuccess(data.saved + ' transaction(s) sauvegardée(s)')
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     saving.value = false
   }
