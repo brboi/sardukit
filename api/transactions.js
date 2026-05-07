@@ -39,9 +39,9 @@ async function handler(req, res) {
         .filter(t => t.sequence_number)
         .map(t => ({
           bank_source,
-          sequence_number: t.sequence_number,
-          extract_number: t.extract_number || null,
-          account_number: t.account_number || null,
+          sequence_number: String(t.sequence_number),
+          extract_number: t.extract_number ? String(t.extract_number) : null,
+          account_number: t.account_number ? String(t.account_number) : null,
           execution_date: normalizeDate(t.execution_date),
           accounting_date: normalizeDate(t.accounting_date),
           value_date: normalizeDate(t.value_date),
@@ -58,7 +58,7 @@ async function handler(req, res) {
           rejection_reason: t.rejection_reason || null,
           bic: t.bic || null,
           country_code: t.country_code || null,
-          raw_data: JSON.stringify(t),
+          raw_data: t,
         }))
         .filter(isValidTransactionRow);
 
@@ -66,30 +66,30 @@ async function handler(req, res) {
         return res.status(200).json({ saved: 0 });
       }
 
-      const batchSize = 50;
+      const batchSize = 500;
       let saved = 0;
+
       for (let i = 0; i < validRows.length; i += batchSize) {
         const batch = validRows.slice(i, i + batchSize);
-        const results = await Promise.all(
-          batch.map(r => sql`
-            INSERT INTO transactions (
-              bank_source, sequence_number, extract_number, account_number,
-              execution_date, accounting_date, value_date, amount, currency,
-              transaction_type, counterparty_account, counterparty_name,
-              counterparty_street, counterparty_city, communication, details,
-              status, rejection_reason, bic, country_code, raw_data
-            ) VALUES (
-              ${r.bank_source}, ${r.sequence_number}, ${r.extract_number}, ${r.account_number},
-              ${r.execution_date}, ${r.accounting_date}, ${r.value_date}, ${r.amount}, ${r.currency},
-              ${r.transaction_type}, ${r.counterparty_account}, ${r.counterparty_name},
-              ${r.counterparty_street}, ${r.counterparty_city}, ${r.communication}, ${r.details},
-              ${r.status}, ${r.rejection_reason}, ${r.bic}, ${r.country_code}, ${r.raw_data}
-            )
-            ON CONFLICT (bank_source, sequence_number) DO NOTHING
-            RETURNING id
-          `)
-        );
-        saved += results.filter(r => r.length > 0).length;
+        const result = await sql`
+          INSERT INTO transactions (
+            bank_source, sequence_number, extract_number, account_number,
+            execution_date, accounting_date, value_date, amount, currency,
+            transaction_type, counterparty_account, counterparty_name,
+            counterparty_street, counterparty_city, communication, details,
+            status, rejection_reason, bic, country_code, raw_data
+          )
+          SELECT * FROM jsonb_to_recordset(${JSON.stringify(batch)}) AS t(
+            bank_source text, sequence_number text, extract_number text, account_number text,
+            execution_date date, accounting_date date, value_date date, amount numeric, currency text,
+            transaction_type text, counterparty_account text, counterparty_name text,
+            counterparty_street text, counterparty_city text, communication text, details text,
+            status text, rejection_reason text, bic text, country_code text, raw_data jsonb
+          )
+          ON CONFLICT (bank_source, sequence_number) DO NOTHING
+          RETURNING id
+        `;
+        saved += result.length;
       }
 
       return res.status(200).json({ saved });
