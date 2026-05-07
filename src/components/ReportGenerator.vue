@@ -69,6 +69,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { apiFetch } from '../services/api.js'
+import { showError, showSuccess } from '../composables/useModal.js'
 
 const currentReport = ref(null)
 const creating = ref(false)
@@ -106,13 +107,13 @@ async function createReport() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       currentReport.value = await res.json()
       breakdown.value = []
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     creating.value = false
   }
@@ -127,15 +128,15 @@ async function generateReport() {
     })
     if (!res.ok) {
       const err = await res.json()
-      alert('Erreur: ' + (err.error || 'Erreur inconnue'))
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
     } else {
       const result = await res.json()
-      alert(result.transactions_processed + ' transaction(s) traitée(s)')
+      showSuccess(result.transactions_processed + ' transaction(s) traitée(s)')
       currentReport.value.final_balance = result.final_balance
       await loadBreakdown()
     }
   } catch (e) {
-    alert('Erreur réseau: ' + e.message)
+    showError('Erreur réseau: ' + e.message)
   } finally {
     generating.value = false
   }
