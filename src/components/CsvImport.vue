@@ -4,6 +4,19 @@
 
     <div v-if="!parsed">
       <label>
+        Bank Source
+        <input
+          type="text"
+          v-model="bankSource"
+          list="bank-sources"
+          placeholder="e.g. BNP, Belfius"
+        />
+        <datalist id="bank-sources">
+          <option v-for="src in bankSources" :key="src" :value="src">{{ src }}</option>
+        </datalist>
+      </label>
+
+      <label>
         Skip header lines
         <input type="number" v-model.number="skipLines" min="0" max="20" />
       </label>
@@ -13,15 +26,31 @@
         <input type="file" accept=".csv" @change="onFileSelect" />
       </label>
 
-      <div v-if="rawHeaders.length" class="grid">
-        <h3>Map Columns</h3>
-        <div v-for="h in rawHeaders" :key="h">
+      <div v-if="parsedHeaders.length" class="grid">
+        <h3>Column Mapping (auto-detected)</h3>
+        <div v-for="h in parsedHeaders" :key="h">
           <label>{{ h }}</label>
-          <select v-model="columnMap[h]">
+          <select v-model="columnMapping[h]">
             <option value="">-- ignore --</option>
-            <option value="date">Date</option>
+            <option value="sequence_number">Sequence Number</option>
+            <option value="extract_number">Extract Number</option>
+            <option value="account_number">Account Number</option>
+            <option value="execution_date">Execution Date</option>
+            <option value="accounting_date">Accounting Date</option>
+            <option value="value_date">Value Date</option>
             <option value="amount">Amount</option>
-            <option value="description">Description</option>
+            <option value="currency">Currency</option>
+            <option value="transaction_type">Transaction Type</option>
+            <option value="counterparty_account">Counterparty Account</option>
+            <option value="counterparty_name">Counterparty Name</option>
+            <option value="counterparty_street">Counterparty Street</option>
+            <option value="counterparty_city">Counterparty City</option>
+            <option value="communication">Communication</option>
+            <option value="details">Details</option>
+            <option value="status">Status</option>
+            <option value="rejection_reason">Rejection Reason</option>
+            <option value="bic">BIC</option>
+            <option value="country_code">Country Code</option>
           </select>
         </div>
         <button @click="parsePreview">Preview</button>
@@ -32,19 +61,25 @@
       <h3>Preview ({{ preview.length }} rows)</h3>
       <table>
         <thead>
-          <tr><th>Date</th><th>Amount</th><th>Description</th></tr>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Counterparty</th>
+            <th>Details</th>
+          </tr>
         </thead>
         <tbody>
           <tr v-for="(row, i) in preview.slice(0, 20)" :key="i">
-            <td>{{ row.date }}</td>
+            <td>{{ row.execution_date || row.accounting_date || row.value_date || '-' }}</td>
             <td>{{ row.amount }}</td>
-            <td>{{ row.description }}</td>
+            <td>{{ row.counterparty_name || '-' }}</td>
+            <td>{{ (row.details || '').slice(0, 80) }}</td>
           </tr>
         </tbody>
       </table>
       <p v-if="preview.length > 20">... and {{ preview.length - 20 }} more</p>
 
-      <button @click="saveTransactions" :disabled="saving">
+      <button @click="saveTransactions" :disabled="saving || !bankSource">
         {{ saving ? 'Saving...' : 'Save All' }}
       </button>
       <button @click="reset">Back</button>
@@ -53,93 +88,93 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
+import { parseCSV, detectColumns, mapRows } from '../services/csvParser.js'
 
+const bankSource = ref('')
+const bankSources = ref([])
 const skipLines = ref(0)
-const rawHeaders = ref([])
-const rawRows = ref([])
-const columnMap = ref({})
+const parsedHeaders = ref([])
+const parsedRows = ref([])
+const rawText = ref('')
+const columnMapping = ref({})
 const preview = ref([])
 const parsed = ref(false)
 const saving = ref(false)
+
+onMounted(async () => {
+  try {
+    const res = await apiFetch('/api/transactions?sources_only=1')
+    if (res.ok) {
+      bankSources.value = await res.json()
+    }
+  } catch {
+    // No sources yet
+  }
+})
+
+watch(skipLines, () => {
+  if (rawText.value) {
+    reparse()
+  }
+})
 
 function onFileSelect(event) {
   const file = event.target.files[0]
   if (!file) return
   const reader = new FileReader()
   reader.onload = (e) => {
-    const text = e.target.result
-    const lines = text.split(/\r?\n/).filter(l => l.trim())
-    const startIdx = skipLines.value
-    if (startIdx >= lines.length) return
-    rawHeaders.value = parseCSVLine(lines[startIdx])
-    rawRows.value = lines.slice(startIdx + 1).map(parseCSVLine)
-    columnMap.value = {}
-    parsed.value = false
+    rawText.value = e.target.result
+    reparse()
   }
   reader.readAsText(file)
 }
 
-function parseCSVLine(line) {
-  const result = []
-  let current = ''
-  let inQuotes = false
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i]
-    if (c === '"') {
-      inQuotes = !inQuotes
-    } else if (c === ',' && !inQuotes) {
-      result.push(current.trim())
-      current = ''
-    } else {
-      current += c
-    }
-  }
-  result.push(current.trim())
-  return result
+function reparse() {
+  const result = parseCSV(rawText.value, skipLines.value)
+  parsedHeaders.value = result.headers
+  parsedRows.value = result.rows
+
+  const autoMapping = detectColumns(result.headers)
+  columnMapping.value = {}
+  result.headers.forEach((h, idx) => {
+    const dbCol = Object.keys(autoMapping).find(k => autoMapping[k] === idx)
+    columnMapping.value[h] = dbCol || ''
+  })
+
+  parsed.value = false
 }
 
 function parsePreview() {
-  const dateIdx = rawHeaders.value.findIndex(h => columnMap.value[h] === 'date')
-  const amountIdx = rawHeaders.value.findIndex(h => columnMap.value[h] === 'amount')
-  const descIdx = rawHeaders.value.findIndex(h => columnMap.value[h] === 'description')
+  const colIdxMap = {}
+  parsedHeaders.value.forEach((h, idx) => {
+    if (columnMapping.value[h]) {
+      colIdxMap[columnMapping.value[h]] = idx
+    }
+  })
 
-  preview.value = rawRows.value
-    .filter(row => row.length > Math.max(dateIdx, amountIdx, descIdx))
-    .map(row => ({
-      date: dateIdx >= 0 ? normalizeDate(row[dateIdx]) : '',
-      amount: amountIdx >= 0 ? parseFloat(row[amountIdx].replace(/[^\d.-]/g, '')) : 0,
-      description: descIdx >= 0 ? row[descIdx] : '',
-    }))
-    .filter(r => r.date || r.amount || r.description)
-
+  preview.value = mapRows(parsedRows.value, colIdxMap)
   parsed.value = true
 }
 
-function normalizeDate(val) {
-  if (!val) return ''
-  val = val.trim()
-  const m = val.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/)
-  if (m) {
-    const [, d, mo, y] = m
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
-  }
-  return val
-}
-
 async function saveTransactions() {
+  if (!bankSource.value) return
   saving.value = true
   try {
     const res = await apiFetch('/api/transactions', {
       method: 'POST',
-      body: JSON.stringify({ transactions: preview.value }),
+      body: JSON.stringify({
+        bank_source: bankSource.value,
+        transactions: preview.value,
+      }),
     })
     if (!res.ok) {
       const err = await res.json()
       alert('Error: ' + (err.error || 'Unknown error'))
     } else {
-      alert('Saved ' + preview.value.length + ' transactions')
+      const data = await res.json()
+      alert('Saved ' + data.saved + ' transactions')
     }
   } catch (e) {
     alert('Network error: ' + e.message)
@@ -150,8 +185,10 @@ async function saveTransactions() {
 
 function reset() {
   parsed.value = false
-  rawHeaders.value = []
-  rawRows.value = []
+  parsedHeaders.value = []
+  parsedRows.value = []
+  rawText.value = ''
   preview.value = []
+  columnMapping.value = {}
 }
 </script>
