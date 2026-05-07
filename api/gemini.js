@@ -3,7 +3,7 @@ import { getDb } from './utils/db.js';
 import { getSetting } from './utils/settings.js';
 import { callGemini } from './utils/gemini.js';
 import { renderPrompt } from './utils/template.js';
-import { RuleSuggestionSchema, RuleSuggestionJsonSchema } from './schemas/rule-suggestion.js';
+import { RuleSuggestionSchema } from './schemas/rule-suggestion.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -42,7 +42,7 @@ async function handler(req, res) {
     };
 
     const prompt = renderPrompt(template, context);
-    const text = await callGemini(apiKey, prompt, RuleSuggestionJsonSchema);
+    const text = await callGemini(apiKey, prompt, RuleSuggestionSchema);
 
     try {
       const rule = RuleSuggestionSchema.parse(JSON.parse(text));

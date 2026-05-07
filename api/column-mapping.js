@@ -3,7 +3,7 @@ import { getDb } from './utils/db.js';
 import { getSetting } from './utils/settings.js';
 import { callGemini } from './utils/gemini.js';
 import { renderColumnMappingPrompt } from './utils/template.js';
-import { ColumnMappingSchema, ColumnMappingJsonSchema } from './schemas/column-mapping.js';
+import { ColumnMappingSchema } from './schemas/column-mapping.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -25,7 +25,7 @@ async function handler(req, res) {
   try {
     const template = await getSetting(sql, 'column_mapping_prompt_template', null);
     const prompt = renderColumnMappingPrompt(template, headers);
-    const text = await callGemini(apiKey, prompt, ColumnMappingJsonSchema);
+    const text = await callGemini(apiKey, prompt, ColumnMappingSchema);
 
     try {
       const result = ColumnMappingSchema.parse(JSON.parse(text));

@@ -1,6 +1,10 @@
+import { zodToJsonSchema } from 'zod-to-json-schema';
+
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 
-export async function callGemini(apiKey, prompt, responseSchema) {
+export async function callGemini(apiKey, prompt, zodSchema) {
+  const schema = zodToJsonSchema(zodSchema);
+
   const response = await fetch(GEMINI_API_URL, {
     method: 'POST',
     headers: {
@@ -11,7 +15,8 @@ export async function callGemini(apiKey, prompt, responseSchema) {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0,
-        response_schema: responseSchema,
+        responseMimeType: 'application/json',
+        responseSchema: schema,
       },
     }),
   });

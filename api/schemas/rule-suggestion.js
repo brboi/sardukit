@@ -8,5 +8,3 @@ export const RuleSuggestionSchema = z.object({
   tags: z.array(z.string()),
   explanation: z.string(),
 });
-
-export const RuleSuggestionJsonSchema = RuleSuggestionSchema.toJSONSchema();
