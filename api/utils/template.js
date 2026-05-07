@@ -17,7 +17,9 @@ const DEFAULT_COLUMN_MAPPING_PROMPT = `Voici les en-têtes de colonnes d'un fich
 {{/context.headers}}
 
 Mappe chaque en-tête à l'un de ces champs de base de données (ou laisse non mappé si aucun ne correspond) :
-sequence_number, extract_number, account_number, execution_date, accounting_date, value_date, amount, currency, transaction_type, counterparty_account, counterparty_name, counterparty_street, counterparty_city, communication, details, status, rejection_reason, bic, country_code`;
+sequence_number, extract_number, account_number, execution_date, accounting_date, value_date, amount, currency, transaction_type, counterparty_account, counterparty_name, counterparty_street, counterparty_city, communication, details, status, rejection_reason, bic, country_code
+
+Réponds avec un tableau d'objets : [{"header": "nom colonne CSV", "field": "champ base de données"}]`;
 
 export function renderPrompt(template, context) {
   const tpl = template || DEFAULT_PROMPT_TEMPLATE;
