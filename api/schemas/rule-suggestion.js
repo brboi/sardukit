@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export const RuleSuggestionSchema = z.object({
   pattern: z.string(),
@@ -10,4 +9,4 @@ export const RuleSuggestionSchema = z.object({
   explanation: z.string(),
 });
 
-export const RuleSuggestionJsonSchema = zodToJsonSchema(RuleSuggestionSchema);
+export const RuleSuggestionJsonSchema = RuleSuggestionSchema.toJSONSchema();
