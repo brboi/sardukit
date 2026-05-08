@@ -98,6 +98,62 @@ async function handler(req, res) {
     }
   }
 
+  if (req.method === 'GET' && req.query?.available_years) {
+    try {
+      const rows = await sql`
+        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
+        FROM transactions
+        WHERE execution_date IS NOT NULL
+        ORDER BY year DESC
+      `;
+      return res.status(200).json(rows.map(r => parseInt(r.year)));
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (req.method === 'GET' && req.query?.available_years) {
+    try {
+      const rows = await sql`
+        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
+        FROM transactions
+        WHERE execution_date IS NOT NULL
+        ORDER BY year DESC
+      `;
+      return res.status(200).json(rows.map(r => parseInt(r.year)));
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (req.method === 'GET' && req.query?.available_years) {
+    try {
+      const rows = await sql`
+        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
+        FROM transactions
+        WHERE execution_date IS NOT NULL
+        ORDER BY year DESC
+      `;
+      return res.status(200).json(rows.map(r => parseInt(r.year)));
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (req.method === 'GET' && req.query?.available_years) {
+    try {
+      const rows = await sql`
+        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
+        FROM transactions
+        WHERE execution_date IS NOT NULL
+        ORDER BY year DESC
+      `;
+      return res.status(200).json(rows.map(r => parseInt(r.year)));
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
