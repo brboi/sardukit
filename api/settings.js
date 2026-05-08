@@ -5,9 +5,9 @@ async function handler(req, res) {
   const sql = getDb();
 
   if (req.method === 'GET' && req.query?.key === 'defaults') {
-    const { DEFAULT_PROMPT_TEMPLATE, DEFAULT_COLUMN_MAPPING_PROMPT } = await import('./utils/template.js');
+    const { DEFAULT_SUGGEST_RULES_PROMPT, DEFAULT_COLUMN_MAPPING_PROMPT } = await import('./utils/template.js');
     return res.status(200).json({
-      gemini_prompt_template: DEFAULT_PROMPT_TEMPLATE,
+      gemini_prompt_template: DEFAULT_SUGGEST_RULES_PROMPT,
       column_mapping_prompt_template: DEFAULT_COLUMN_MAPPING_PROMPT,
     });
   }

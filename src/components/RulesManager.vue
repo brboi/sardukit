@@ -60,7 +60,7 @@
         </tbody>
       </table>
 
-      <div class="grid mt-2">
+      <div class="form-grid mt-2">
         <h3>Ajouter une règle</h3>
         <div class="flex gap-1 mb-1">
           <select v-model="newRule.criteria[0].column">
@@ -91,54 +91,6 @@
       <button @click="saveRules" :disabled="saving" class="mt-2">
         {{ saving ? 'Sauvegarde...' : 'Sauvegarder toutes les règles' }}
       </button>
-
-      <details class="mt-3">
-        <summary><strong>Suggérer une règle avec l'IA Gemini</strong></summary>
-        <div class="grid mt-2">
-          <h4>Coller les descriptions de transactions</h4>
-          <textarea
-            v-model="geminiDescriptions"
-            placeholder="Une description par ligne"
-            rows="5"
-          ></textarea>
-          <button @click="suggestRule" :disabled="geminiLoading">
-            {{ geminiLoading ? 'Analyse en cours...' : 'Suggérer une règle' }}
-          </button>
-        </div>
-
-        <div v-if="geminiSuggestion" class="mt-2 bordered-card">
-          <h4>Règle proposée</h4>
-          <p v-if="geminiSuggestion.explanation" class="text-muted italic">
-            {{ geminiSuggestion.explanation }}
-          </p>
-          <div v-for="(c, ci) in geminiSuggestion.criteria" :key="ci" class="flex gap-1 mb-1">
-            <select v-model="c.column">
-              <option value="communication">Communication</option>
-              <option value="description">Description</option>
-              <option value="details">Détails</option>
-              <option value="any">Toutes</option>
-            </select>
-            <select v-model="c.match_type">
-              <option value="contains">Contient</option>
-              <option value="starts_with">Commence par</option>
-              <option value="ends_with">Finit par</option>
-              <option value="regex">Regex</option>
-              <option value="exact">Exact</option>
-            </select>
-            <input type="text" v-model="c.pattern" style="flex:1" />
-          </div>
-          <label>Mode
-            <select v-model="geminiSuggestion.criteria_mode">
-              <option value="AND">AND</option>
-              <option value="OR">OR</option>
-            </select>
-          </label>
-          <label>Catégorie <input type="text" v-model="geminiSuggestion.category" /></label>
-          <label>Sous-catégorie <input type="text" v-model="geminiSuggestion.sub_category" /></label>
-          <button @click="addGeminiRule">Ajouter cette règle</button>
-          <button @click="geminiSuggestion = null">Ignorer</button>
-        </div>
-      </details>
     </template>
   </div>
 </template>
@@ -158,9 +110,6 @@ const newRule = ref({
   sub_category: '',
   tags_text: '',
 })
-const geminiDescriptions = ref('')
-const geminiLoading = ref(false)
-const geminiSuggestion = ref(null)
 
 onMounted(async () => {
   await loadRules()
@@ -266,47 +215,5 @@ async function saveRules() {
   } finally {
     saving.value = false
   }
-}
-
-async function suggestRule() {
-  const descriptions = geminiDescriptions.value.split('\n').filter(l => l.trim())
-  if (descriptions.length === 0) return
-
-  geminiLoading.value = true
-  geminiSuggestion.value = null
-  try {
-    const categories = [...new Set(rules.value.map(r => r.category).filter(Boolean))]
-    const res = await apiFetch('/api/gemini', {
-      method: 'POST',
-      body: JSON.stringify({ descriptions, categories }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
-    } else {
-      geminiSuggestion.value = await res.json()
-    }
-  } catch (e) {
-    showError('Erreur réseau: ' + e.message)
-  } finally {
-    geminiLoading.value = false
-  }
-}
-
-function addGeminiRule() {
-  if (!geminiSuggestion.value?.criteria?.length || !geminiSuggestion.value?.category) return
-  const maxPriority = rules.value.reduce((max, r) => Math.max(max, r.priority ?? 0), 0)
-  rules.value.push({
-    id: Date.now().toString(),
-    criteria: geminiSuggestion.value.criteria,
-    criteria_mode: geminiSuggestion.value.criteria_mode || 'AND',
-    category: geminiSuggestion.value.category,
-    sub_category: geminiSuggestion.value.sub_category || null,
-    priority: maxPriority + 1,
-    tags: geminiSuggestion.value.tags || [],
-    tags_text: (geminiSuggestion.value.tags || []).join(', '),
-  })
-  geminiSuggestion.value = null
-  geminiDescriptions.value = ''
 }
 </script>
