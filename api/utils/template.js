@@ -21,6 +21,34 @@ sequence_number, extract_number, account_number, execution_date, accounting_date
 
 Réponds avec un tableau d'objets : [{"header": "nom colonne CSV", "field": "champ base de données"}]`;
 
+const DEFAULT_SUGGEST_RULES_PROMPT = `Tu es un expert en catégorisation de transactions bancaires.
+
+Voici {{groups.length}} groupe(s) de transactions similaires. Pour chaque groupe, suggère UNE règle qui catégoriserait ces transactions.
+
+{{#groups}}
+--- GROUPE {{@index}} ---
+{{#transactions}}
+- {{description}} ({{amount}} EUR)
+{{/transactions}}
+{{#suggested_category}}Catégorie suggérée par l'utilisateur: {{suggested_category}}{{/suggested_category}}
+{{#suggested_sub_category}}Sous-catégorie suggérée: {{suggested_sub_category}}{{/suggested_sub_category}}
+{{#suggested_tags}}Tags suggérés: {{suggested_tags}}{{/suggested_tags}}
+
+{{/groups}}
+
+Catégories existantes: {{#categories}}{{.}}, {{/categories}}
+Tags existants: {{#tags}}{{.}}, {{/tags}}
+
+Pour chaque groupe, retourne une règle avec:
+- criteria: array de critères (column: "communication"/"description"/"details"/"any", match_type: "contains"/"starts_with"/"ends_with"/"regex"/"exact", pattern: le motif)
+- criteria_mode: "AND" ou "OR"
+- category: la catégorie
+- sub_category: sous-catégorie ou null
+- tags: array de tags
+- explanation: brève explication
+
+Réponds avec un JSON: {"rules": [règle1, règle2, ...]}`;
+
 export function renderPrompt(template, context) {
   const tpl = template || DEFAULT_PROMPT_TEMPLATE;
   return Mustache.render(tpl, { context });
@@ -31,4 +59,17 @@ export function renderColumnMappingPrompt(template, headers) {
   return Mustache.render(tpl, { context: { headers } });
 }
 
-export { DEFAULT_PROMPT_TEMPLATE, DEFAULT_COLUMN_MAPPING_PROMPT };
+export function renderSuggestRulesPrompt(template, groups, categories, tags) {
+  const tpl = template || DEFAULT_SUGGEST_RULES_PROMPT;
+  const context = {
+    groups: groups.map(g => ({
+      ...g,
+      suggested_tags: g.suggested_tags?.join(', ') || '',
+    })),
+    categories,
+    tags,
+  };
+  return Mustache.render(tpl, context);
+}
+
+export { DEFAULT_PROMPT_TEMPLATE, DEFAULT_COLUMN_MAPPING_PROMPT, DEFAULT_SUGGEST_RULES_PROMPT };
