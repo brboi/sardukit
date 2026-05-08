@@ -101,17 +101,7 @@
         </div>
       </details>
 
-      <TemplateEditor
-        title="Template de prompt IA (règles)"
-        storage-key="gemini_prompt_template"
-        :default-value="defaults.gemini_prompt_template"
-      />
-      <TemplateEditor
-        title="Template de prompt IA (mapping colonnes)"
-        storage-key="column_mapping_prompt_template"
-        :default-value="defaults.column_mapping_prompt_template"
-      />
-    </template>
+        </template>
   </div>
 </template>
 
@@ -119,7 +109,6 @@
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../services/api.js'
 import { showError, showSuccess } from '../composables/useModal.js'
-import TemplateEditor from './TemplateEditor.vue'
 
 
 const RULES_KEY = 'categorization_rules'
