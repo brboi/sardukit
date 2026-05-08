@@ -161,7 +161,7 @@
           <div class="mt-1">
             <table>
               <thead>
-                <tr><th>Date</th><th>Description</th><th>Montant</th><th></th></tr>
+                <tr><th>Date</th><th>Description</th><th>Montant</th></tr>
               </thead>
               <tbody>
                 <tr v-for="(t, ti) in group.transactions" :key="t.transaction_id">
