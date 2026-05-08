@@ -7,6 +7,15 @@ async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
+      if (req.query?.available_years) {
+        const rows = await sql`
+          SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
+          FROM transactions
+          WHERE execution_date IS NOT NULL
+          ORDER BY year DESC
+        `;
+        return res.status(200).json(rows.map(r => parseInt(r.year)));
+      }
       if (req.query?.sources_only) {
         const rows = await sql`SELECT DISTINCT bank_source FROM transactions WHERE bank_source IS NOT NULL ORDER BY bank_source`;
         return res.status(200).json(rows.map(r => r.bank_source));
@@ -93,62 +102,6 @@ async function handler(req, res) {
       }
 
       return res.status(200).json({ saved });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-
-  if (req.method === 'GET' && req.query?.available_years) {
-    try {
-      const rows = await sql`
-        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
-        FROM transactions
-        WHERE execution_date IS NOT NULL
-        ORDER BY year DESC
-      `;
-      return res.status(200).json(rows.map(r => parseInt(r.year)));
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-
-  if (req.method === 'GET' && req.query?.available_years) {
-    try {
-      const rows = await sql`
-        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
-        FROM transactions
-        WHERE execution_date IS NOT NULL
-        ORDER BY year DESC
-      `;
-      return res.status(200).json(rows.map(r => parseInt(r.year)));
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-
-  if (req.method === 'GET' && req.query?.available_years) {
-    try {
-      const rows = await sql`
-        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
-        FROM transactions
-        WHERE execution_date IS NOT NULL
-        ORDER BY year DESC
-      `;
-      return res.status(200).json(rows.map(r => parseInt(r.year)));
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-
-  if (req.method === 'GET' && req.query?.available_years) {
-    try {
-      const rows = await sql`
-        SELECT DISTINCT EXTRACT(YEAR FROM execution_date) as year
-        FROM transactions
-        WHERE execution_date IS NOT NULL
-        ORDER BY year DESC
-      `;
-      return res.status(200).json(rows.map(r => parseInt(r.year)));
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
