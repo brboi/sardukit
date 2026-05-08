@@ -58,9 +58,8 @@
             <input type="number" step="0.01" v-model.number="editForm.initial_balance" />
           </label>
           <div class="flex gap-1">
-            <button @click="saveBalance">Sauvegarder</button>
-            <button @click="generateReport" :disabled="generating">
-              {{ generating ? 'Scan...' : 'Re-scanner' }}
+            <button @click="saveBalance" :disabled="saving">
+              {{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}
             </button>
           </div>
         </div>
@@ -246,6 +245,7 @@ const showCreateForm = ref(false)
 const creating = ref(false)
 const generating = ref(false)
 const exporting = ref(false)
+const saving = ref(false)
 const breakdown = ref([])
 const reportTransactions = ref([])
 const totalTransactions = ref(0)
@@ -385,6 +385,7 @@ async function createReport() {
 
 async function saveBalance() {
   if (!currentReport.value) return
+  saving.value = true
   try {
     const res = await apiFetch(`/api/reports/${currentReport.value.id}`, {
       method: 'PATCH',
@@ -399,6 +400,8 @@ async function saveBalance() {
     }
   } catch (e) {
     showError('Erreur réseau: ' + e.message)
+  } finally {
+    saving.value = false
   }
 }
 
