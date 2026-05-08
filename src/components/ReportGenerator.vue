@@ -12,7 +12,7 @@
 
       <div v-if="showCreateForm" class="bordered-card mb-2">
         <h3>Nouveau rapport</h3>
-        <div class="grid">
+        <div class="form-grid">
           <label>Nom <input type="text" v-model="form.name" placeholder="Nom du rapport" /></label>
           <label>Année
             <select v-model.number="form.year">
@@ -205,7 +205,7 @@
             </select>
             <input type="text" v-model="c.pattern" style="flex:1" />
           </div>
-          <div class="grid">
+          <div class="form-grid">
             <label>Mode
               <select v-model="s.criteria_mode">
                 <option value="AND">AND</option>
