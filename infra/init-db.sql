@@ -33,6 +33,18 @@ CREATE TABLE IF NOT EXISTS settings (
     value JSONB
 );
 
+CREATE TABLE IF NOT EXISTS rules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    priority INTEGER NOT NULL DEFAULT 0,
+    criteria JSONB NOT NULL DEFAULT '[]',
+    criteria_mode TEXT NOT NULL DEFAULT 'AND',
+    category TEXT NOT NULL,
+    sub_category TEXT,
+    tags JSONB DEFAULT '[]',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT,
@@ -48,5 +60,6 @@ CREATE TABLE IF NOT EXISTS report_transactions (
     category TEXT,
     sub_category TEXT,
     tags JSONB,
+    rule_id UUID REFERENCES rules(id),
     PRIMARY KEY (report_id, transaction_id)
 );
