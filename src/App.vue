@@ -4,6 +4,7 @@ import { getAuthToken, apiFetch, clearAuthToken } from './services/api.js'
 import CsvImport from './components/CsvImport.vue'
 import RulesManager from './components/RulesManager.vue'
 import ReportGenerator from './components/ReportGenerator.vue'
+import Settings from './components/Settings.vue'
 import ModalDialog from './components/ModalDialog.vue'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
@@ -11,7 +12,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 const email = ref(null)
 const loading = ref(true)
 const error = ref(null)
-const view = ref('dash')
+const view = ref('report')
 const authExpiredMessage = ref('')
 
 function handleCredentialResponse(response) {
@@ -44,7 +45,7 @@ async function verifyToken(idToken) {
 function logout() {
   clearAuthToken()
   email.value = null
-  view.value = 'dash'
+  view.value = 'report'
   window.location.reload()
 }
 
@@ -82,17 +83,16 @@ window.handleCredentialResponse = handleCredentialResponse
       <nav>
         <ul><li><strong>Sardukit</strong></li></ul>
         <ul>
-          <li><a href="#" @click.prevent="view = 'dash'">Tableau de bord</a></li>
+          <li><a href="#" @click.prevent="view = 'report'">Rapports</a></li>
           <li><a href="#" @click.prevent="view = 'import'">Importer</a></li>
           <li><a href="#" @click.prevent="view = 'rules'">Règles</a></li>
-          <li><a href="#" @click.prevent="view = 'report'">Rapport</a></li>
+          <li><a href="#" @click.prevent="view = 'settings'">Settings</a></li>
           <li><a href="#" @click.prevent="logout">Déconnexion ({{ email }})</a></li>
         </ul>
       </nav>
 
-      <div v-if="view === 'dash'">
-        <h1>Bienvenue</h1>
-        <p>Connecté en tant que <strong>{{ email }}</strong></p>
+      <div v-if="view === 'report'">
+        <ReportGenerator />
       </div>
       <div v-if="view === 'import'">
         <CsvImport />
@@ -100,8 +100,8 @@ window.handleCredentialResponse = handleCredentialResponse
       <div v-if="view === 'rules'">
         <RulesManager />
       </div>
-      <div v-if="view === 'report'">
-        <ReportGenerator />
+      <div v-if="view === 'settings'">
+        <Settings />
       </div>
     </template>
 
