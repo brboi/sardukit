@@ -43,7 +43,7 @@ describe('applyRules', () => {
   });
 
   it('matches regex rule on any column', () => {
-    const result = applyRules({ description: 'Uber ride to airport' }, rules);
+    const result = applyRules({ communication: 'Uber ride to airport' }, rules);
     expect(result).toEqual({ category: 'Transport', sub_category: 'Ride', tags: ['transport'], rule_id: '3' });
   });
 

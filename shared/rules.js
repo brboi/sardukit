@@ -1,11 +1,14 @@
 function getColumnValue(transaction, column) {
+  if (column === 'description') column = 'details';
   if (column === 'any') {
-    return [transaction.communication, transaction.details]
+    return [transaction.communication, transaction.description, transaction.details]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
   }
-  return ((transaction[column] || '')).toLowerCase();
+  const val = transaction[column] || '';
+  if (column === 'details' && !val) return (transaction.description || '').toLowerCase();
+  return (val || '').toLowerCase();
 }
 
 function matchesPattern(value, pattern, matchType) {
