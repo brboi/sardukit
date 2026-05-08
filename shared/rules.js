@@ -1,6 +1,6 @@
 function getColumnValue(transaction, column) {
   if (column === 'any') {
-    return [transaction.communication, transaction.description, transaction.details]
+    return [transaction.communication, transaction.details]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();

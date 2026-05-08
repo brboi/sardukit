@@ -31,7 +31,7 @@ async function handler(req, res) {
     const transactions = await sql`
       SELECT
         COALESCE(t.execution_date, t.accounting_date, t.value_date) as date,
-        COALESCE(t.communication, t.description, t.details, '') as description,
+        COALESCE(t.communication, t.details, '') as description,
         t.amount,
         rt.category,
         rt.sub_category,

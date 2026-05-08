@@ -83,6 +83,11 @@ describe('normalizeDate', () => {
     expect(normalizeDate(null)).toBe(null);
     expect(normalizeDate('')).toBe(null);
   });
+
+  it('is idempotent for YYYY-MM-DD format', () => {
+    expect(normalizeDate('2025-12-31')).toBe('2025-12-31');
+    expect(normalizeDate(normalizeDate('31-12-25'))).toBe('2025-12-31');
+  });
 });
 
 describe('parseAmount', () => {

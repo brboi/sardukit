@@ -127,7 +127,7 @@
             <tr v-for="t in paginatedTransactions" :key="t.transaction_id">
               <td><input type="checkbox" :checked="selectedIds.has(t.transaction_id)" @change="toggleSelect(t.transaction_id)" /></td>
               <td>{{ t.execution_date || '-' }}</td>
-              <td>{{ t.communication || t.description || t.details || '-' }}</td>
+              <td>{{ t.communication || t.details || '-' }}</td>
               <td>{{ formatCurrency(t.amount) }}</td>
               <td>{{ t.category }}</td>
               <td>{{ t.sub_category || '-' }}</td>
@@ -169,7 +169,7 @@
               <tbody>
                 <tr v-for="(t, ti) in group.transactions" :key="t.transaction_id">
                   <td>{{ t.date || '-' }}</td>
-                  <td>{{ t.description }}</td>
+                  <td>{{ t.communication || t.details || '-' }}</td>
                   <td>{{ formatCurrency(t.amount) }}</td>
                   <td><button @click="removeFromGroup(gi, ti)" title="Retirer">✕</button></td>
                 </tr>
@@ -192,8 +192,18 @@
           <div v-for="(c, ci) in s.criteria" :key="ci" class="flex gap-1 mb-1">
             <select v-model="c.column">
               <option value="communication">Communication</option>
-              <option value="description">Description</option>
               <option value="details">Détails</option>
+              <option value="counterparty_name">Nom contrepartie</option>
+              <option value="counterparty_account">Compte contrepartie</option>
+              <option value="transaction_type">Type transaction</option>
+              <option value="counterparty_street">Rue</option>
+              <option value="counterparty_city">Ville</option>
+              <option value="status">Statut</option>
+              <option value="rejection_reason">Motif refus</option>
+              <option value="bic">BIC</option>
+              <option value="country_code">Code pays</option>
+              <option value="sequence_number">Nº séquence</option>
+              <option value="extract_number">Nº extrait</option>
               <option value="any">Toutes</option>
             </select>
             <select v-model="c.match_type">
@@ -446,7 +456,7 @@ function prepareGroup() {
     .map(t => ({
       transaction_id: t.transaction_id,
       date: t.execution_date || '',
-      description: t.communication || t.description || t.details || '',
+      description: t.communication || t.details || '',
       amount: t.amount,
     }))
   aiGroups.value.push({
@@ -544,7 +554,7 @@ async function exportReport() {
     // Data sheet
     const dataRows = data.transactions.map(t => ({
       Date: t.date || '',
-      Description: t.description || '',
+      Description: t.communication || t.details || '',
       Montant: parseFloat(t.amount),
       Catégorie: t.category || '',
       'Sous-catégorie': t.sub_category || '',

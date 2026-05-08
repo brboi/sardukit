@@ -44,7 +44,7 @@ async function handler(req, res) {
       `;
 
       const transactions = await sql`
-        SELECT rt.*, t.execution_date, t.communication, t.description, t.details, t.amount
+        SELECT rt.*, t.execution_date, t.communication, t.details, t.amount
         FROM report_transactions rt
         JOIN transactions t ON t.id = rt.transaction_id
         WHERE rt.report_id = ${reportId}

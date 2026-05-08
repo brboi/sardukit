@@ -26,8 +26,18 @@
               <div v-for="(c, ci) in rule.criteria" :key="ci" class="flex gap-1 mb-1">
                 <select v-model="c.column" class="text-sm">
                   <option value="communication">Communication</option>
-                  <option value="description">Description</option>
                   <option value="details">Détails</option>
+                  <option value="counterparty_name">Nom contrepartie</option>
+                  <option value="counterparty_account">Compte contrepartie</option>
+                  <option value="transaction_type">Type transaction</option>
+                  <option value="counterparty_street">Rue</option>
+                  <option value="counterparty_city">Ville</option>
+                  <option value="status">Statut</option>
+                  <option value="rejection_reason">Motif refus</option>
+                  <option value="bic">BIC</option>
+                  <option value="country_code">Code pays</option>
+                  <option value="sequence_number">Nº séquence</option>
+                  <option value="extract_number">Nº extrait</option>
                   <option value="any">Toutes</option>
                 </select>
                 <select v-model="c.match_type" class="text-sm">
@@ -60,32 +70,50 @@
         </tbody>
       </table>
 
-      <div class="form-grid mt-2">
+      <div class="bordered-card mt-2">
         <h3>Ajouter une règle</h3>
-        <div class="flex gap-1 mb-1">
-          <select v-model="newRule.criteria[0].column">
-            <option value="communication">Communication</option>
-            <option value="description">Description</option>
-            <option value="details">Détails</option>
-            <option value="any">Toutes</option>
-          </select>
-          <select v-model="newRule.criteria[0].match_type">
-            <option value="contains">Contient</option>
-            <option value="starts_with">Commence par</option>
-            <option value="ends_with">Finit par</option>
-            <option value="regex">Regex</option>
-            <option value="exact">Exact</option>
-          </select>
-          <input type="text" v-model="newRule.criteria[0].pattern" placeholder="Motif" style="flex:1" />
+        <div class="mb-2">
+          <div v-for="(c, ci) in newRule.criteria" :key="ci" class="flex gap-1 mb-1">
+            <select v-model="c.column">
+              <option value="communication">Communication</option>
+              <option value="details">Détails</option>
+              <option value="counterparty_name">Nom contrepartie</option>
+              <option value="counterparty_account">Compte contrepartie</option>
+              <option value="transaction_type">Type transaction</option>
+              <option value="counterparty_street">Rue</option>
+              <option value="counterparty_city">Ville</option>
+              <option value="status">Statut</option>
+              <option value="rejection_reason">Motif refus</option>
+              <option value="bic">BIC</option>
+              <option value="country_code">Code pays</option>
+              <option value="sequence_number">Nº séquence</option>
+              <option value="extract_number">Nº extrait</option>
+              <option value="any">Toutes</option>
+            </select>
+            <select v-model="c.match_type">
+              <option value="contains">Contient</option>
+              <option value="starts_with">Commence par</option>
+              <option value="ends_with">Finit par</option>
+              <option value="regex">Regex</option>
+              <option value="exact">Exact</option>
+            </select>
+            <input type="text" v-model="c.pattern" placeholder="Motif" style="flex:1" />
+            <button v-if="newRule.criteria.length > 1" @click="newRule.criteria.splice(ci, 1)" title="Supprimer">✕</button>
+          </div>
+          <button @click="newRule.criteria.push({ column: 'communication', match_type: 'contains', pattern: '' })" class="text-sm text-accent">+ Critère</button>
         </div>
-        <select v-model="newRule.criteria_mode">
-          <option value="AND">AND</option>
-          <option value="OR">OR</option>
-        </select>
-        <input type="text" v-model="newRule.category" placeholder="Catégorie" />
-        <input type="text" v-model="newRule.sub_category" placeholder="Sous-catégorie (optionnel)" />
-        <input type="text" v-model="newRule.tags_text" placeholder="Tags (séparés par virgule)" />
-        <button @click="addRule">Ajouter</button>
+        <div class="form-grid">
+          <label>Mode
+            <select v-model="newRule.criteria_mode">
+              <option value="AND">AND</option>
+              <option value="OR">OR</option>
+            </select>
+          </label>
+          <label>Catégorie <input type="text" v-model="newRule.category" placeholder="Catégorie" /></label>
+          <label>Sous-catégorie <input type="text" v-model="newRule.sub_category" placeholder="Sous-catégorie (optionnel)" /></label>
+          <label>Tags <input type="text" v-model="newRule.tags_text" placeholder="Tags (séparés par virgule)" /></label>
+          <div><button @click="addRule">Ajouter</button></div>
+        </div>
       </div>
 
       <button @click="saveRules" :disabled="saving" class="mt-2">
