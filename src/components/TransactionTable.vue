@@ -34,6 +34,7 @@
                 @change="$emit('select', t.transaction_id)"
               />
             </template>
+            <template v-else>-</template>
           </td>
           <td class="col-date">{{ formatDate(t.execution_date) }}</td>
           <td class="col-description">{{ t.communication || t.details || '-' }}</td>

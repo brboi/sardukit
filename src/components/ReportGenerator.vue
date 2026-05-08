@@ -111,30 +111,14 @@
           </button>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th><input type="checkbox" :checked="allSelected" @change="toggleAll" /></th>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Montant</th>
-              <th>Catégorie</th>
-              <th>Sous-catégorie</th>
-              <th>Tags</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="t in paginatedTransactions" :key="t.transaction_id">
-              <td><input type="checkbox" :checked="selectedIds.has(t.transaction_id)" @change="toggleSelect(t.transaction_id)" /></td>
-              <td>{{ t.execution_date || '-' }}</td>
-              <td>{{ t.communication || t.details || '-' }}</td>
-              <td>{{ formatCurrency(t.amount) }}</td>
-              <td>{{ t.category }}</td>
-              <td>{{ t.sub_category || '-' }}</td>
-              <td>{{ (t.tags || []).join(', ') }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <TransactionTable
+          :transactions="paginatedTransactions"
+          :show-checkbox="true"
+          :grouped-ids="groupedIds"
+          :selected-ids="selectedIds"
+          :all-group-names="allGroupNames"
+          @select="toggleSelect"
+        />
 
         <!-- Pagination -->
         <div class="flex gap-2 mt-1" v-if="totalPages > 1">
@@ -240,6 +224,7 @@ import { ref, computed, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
 import { apiFetch } from '../services/api.js'
 import { showError, showSuccess } from '../composables/useModal.js'
+import TransactionTable from './TransactionTable.vue'
 
 const reports = ref([])
 const currentReport = ref(null)
@@ -258,6 +243,26 @@ const availableYears = ref([])
 const aiGroups = ref([])
 const aiLoading = ref(false)
 const aiSuggestions = ref([])
+
+const groupedIds = computed(() => {
+  const ids = new Set()
+  for (const g of aiGroups.value) {
+    for (const t of g.transactions) {
+      ids.add(t.transaction_id)
+    }
+  }
+  return ids
+})
+
+const allGroupNames = computed(() => {
+  const map = new Map()
+  for (const g of aiGroups.value) {
+    for (const t of g.transactions) {
+      map.set(t.transaction_id, g.name)
+    }
+  }
+  return map
+})
 
 const form = ref({
   name: '',
