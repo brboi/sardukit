@@ -6,6 +6,9 @@
     { "source": "/api/gemini", "destination": "/api/gemini.js" },
     { "source": "/api/reports", "destination": "/api/reports.js" },
     { "source": "/api/reports/generate", "destination": "/api/reports/generate.js" },
+    { "source": "/api/reports/export", "destination": "/api/reports/export.js" },
+    { "source": "/api/reports/apply-rules", "destination": "/api/reports/apply-rules.js" },
+    { "source": "/api/rules", "destination": "/api/rules.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
