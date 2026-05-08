@@ -50,57 +50,6 @@ async function handler(req, res) {
       const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text;
       return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: truncated });
     }
-      if (typeof parsed.mapping === 'string') {
-        try {
-          parsed.mapping = JSON.parse(parsed.mapping);
-        } catch {
-          parsed.mapping = [];
-        }
-      }
-      if (!Array.isArray(parsed.mapping)) {
-        parsed.mapping = [];
-      }
-      const result = ColumnMappingSchema.parse(parsed);
-      const mapping = Object.fromEntries(result.mapping.map(m => [m.header, m.field]));
-      return res.status(200).json({ mapping });
-    } catch (err) {
-      const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text;
-      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: truncated });
-    }
-      if (typeof parsed.mapping === 'string') {
-        try {
-          parsed.mapping = JSON.parse(parsed.mapping);
-        } catch {
-          parsed.mapping = [];
-        }
-      }
-      if (!Array.isArray(parsed.mapping)) {
-        parsed.mapping = [];
-      }
-      const result = ColumnMappingSchema.parse(parsed);
-      const mapping = Object.fromEntries(result.mapping.map(m => [m.header, m.field]));
-      return res.status(200).json({ mapping });
-    } catch (err) {
-      const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text;
-      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: truncated });
-    }
-      if (typeof parsed.mapping === 'string') {
-        try {
-          parsed.mapping = JSON.parse(parsed.mapping);
-        } catch {
-          parsed.mapping = [];
-        }
-      }
-      if (!Array.isArray(parsed.mapping)) {
-        parsed.mapping = [];
-      }
-      const result = ColumnMappingSchema.parse(parsed);
-      const mapping = Object.fromEntries(result.mapping.map(m => [m.header, m.field]));
-      return res.status(200).json({ mapping });
-    } catch (err) {
-      const truncated = text.length > 500 ? text.slice(0, 500) + '...' : text;
-      return res.status(500).json({ error: 'Invalid response format', details: err.message, raw: truncated });
-    }
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
