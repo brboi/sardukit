@@ -4,7 +4,7 @@
 
     <details open>
       <summary><strong>Général</strong></summary>
-      <div class="grid mt-2">
+      <div class="form-grid mt-2">
         <label>
           Batch size (lignes par page dans les rapports)
           <input type="number" v-model.number="batchSize" min="5" max="100" />
@@ -15,18 +15,20 @@
       </div>
     </details>
 
-    <TemplateEditor
-      title="Template de prompt IA (règles)"
-      storage-key="gemini_prompt_template"
-      :default-value="defaults.gemini_prompt_template"
-      class="mt-2"
-    />
-    <TemplateEditor
-      title="Template de prompt IA (mapping colonnes)"
-      storage-key="column_mapping_prompt_template"
-      :default-value="defaults.column_mapping_prompt_template"
-      class="mt-2"
-    />
+    <template v-if="Object.keys(defaults).length">
+      <TemplateEditor
+        title="Template de prompt IA (règles)"
+        storage-key="gemini_prompt_template"
+        :default-value="defaults.gemini_prompt_template"
+        class="mt-2"
+      />
+      <TemplateEditor
+        title="Template de prompt IA (mapping colonnes)"
+        storage-key="column_mapping_prompt_template"
+        :default-value="defaults.column_mapping_prompt_template"
+        class="mt-2"
+      />
+    </template>
   </div>
 </template>
 
