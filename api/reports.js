@@ -31,6 +31,31 @@ async function handler(req, res) {
     }
   }
 
+  if (req.method === 'PATCH') {
+    const { id, initial_balance } = req.body || {};
+    if (!id) {
+      return res.status(400).json({ error: 'Missing report id' });
+    }
+    if (typeof initial_balance !== 'number') {
+      return res.status(400).json({ error: 'initial_balance must be a number' });
+    }
+    try {
+      const rows = await sql`
+        UPDATE reports SET
+          initial_balance = ${initial_balance},
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `;
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Report not found' });
+      }
+      return res.status(200).json(rows[0]);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
