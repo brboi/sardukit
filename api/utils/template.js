@@ -14,11 +14,12 @@ const DEFAULT_SUGGEST_RULES_PROMPT = `Tu es un expert en catégorisation de tran
 
 Voici {{groups.length}} groupe(s) de transactions similaires. Pour chaque groupe, suggère UNE règle qui catégoriserait ces transactions.
 
+Chaque transaction est un objet JSON avec ces colonnes :
+bank_source, extract_number, account_number, execution_date, accounting_date, value_date, amount, currency, transaction_type, counterparty_account, counterparty_name, counterparty_street, counterparty_city, communication, details, status, rejection_reason, bic, country_code
+
 {{#groups}}
 --- GROUPE {{@index}} ---
-{{#transactions}}
-- {{description}} ({{amount}} EUR)
-{{/transactions}}
+{{transactions_json}}
 {{#suggested_category}}Catégorie suggérée par l'utilisateur: {{suggested_category}}{{/suggested_category}}
 {{#suggested_sub_category}}Sous-catégorie suggérée: {{suggested_sub_category}}{{/suggested_sub_category}}
 {{#suggested_tags}}Tags suggérés: {{suggested_tags}}{{/suggested_tags}}
@@ -48,6 +49,7 @@ export function renderSuggestRulesPrompt(template, groups, categories, tags) {
   const context = {
     groups: groups.map(g => ({
       ...g,
+      transactions_json: JSON.stringify(g.transactions, null, 2),
       suggested_tags: g.suggested_tags?.join(', ') || '',
     })),
     categories,
