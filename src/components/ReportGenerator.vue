@@ -52,6 +52,20 @@
         <button @click="currentReport = null; breakdown = []; reportTransactions = []">← Liste</button>
       </div>
 
+      <div class="bordered-card mb-2">
+        <div class="form-grid">
+          <label>Solde initial
+            <input type="number" step="0.01" v-model.number="editForm.initial_balance" />
+          </label>
+          <div class="flex gap-1">
+            <button @click="saveBalance">Sauvegarder</button>
+            <button @click="generateReport" :disabled="generating">
+              {{ generating ? 'Scan...' : 'Re-scanner' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="flex gap-2 mb-2">
         <button @click="generateReport" :disabled="generating">
           {{ generating ? 'Génération...' : 'Générer / Re-scanner' }}
@@ -270,8 +284,15 @@ const form = ref({
   initial_balance: 0,
 })
 
+const editForm = ref({
+  initial_balance: 0,
+})
+
 const totalPages = computed(() => Math.ceil(totalTransactions.value / pageSize.value))
-const paginatedTransactions = computed(() => reportTransactions.value)
+const paginatedTransactions = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return reportTransactions.value.slice(start, start + pageSize.value)
+})
 
 const sumTransactions = computed(() => {
   return breakdown.value.reduce((sum, row) => sum + parseFloat(row.total || 0), 0)
@@ -362,6 +383,25 @@ async function createReport() {
   }
 }
 
+async function saveBalance() {
+  if (!currentReport.value) return
+  try {
+    const res = await apiFetch(`/api/reports/${currentReport.value.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ initial_balance: editForm.value.initial_balance }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      showError('Erreur: ' + (err.error || 'Erreur inconnue'))
+    } else {
+      currentReport.value.initial_balance = editForm.value.initial_balance
+      showSuccess('Solde initial mis à jour')
+    }
+  } catch (e) {
+    showError('Erreur réseau: ' + e.message)
+  }
+}
+
 async function openReport(report) {
   currentReport.value = report
   breakdown.value = []
@@ -370,6 +410,7 @@ async function openReport(report) {
   aiGroups.value = []
   aiSuggestions.value = []
   page.value = 1
+  editForm.value.initial_balance = currentReport.value.initial_balance
   await loadBreakdown()
 }
 
